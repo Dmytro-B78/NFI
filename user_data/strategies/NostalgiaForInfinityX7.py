@@ -74,6 +74,24 @@ class NostalgiaForInfinityX7(IStrategy):
 
   stoploss = -0.99
 
+  protections = [
+    {"method": "CooldownPeriod", "stop_duration_candles": 6},
+    {
+      "method": "StoplossGuard",
+      "lookback_period_candles": 288,
+      "trade_limit": 2,
+      "stop_duration_candles": 288,
+      "only_per_pair": False,
+    },
+    {
+      "method": "MaxDrawdown",
+      "lookback_period_candles": 288,
+      "trade_limit": 5,
+      "stop_duration_candles": 288,
+      "max_allowed_drawdown": 0.10,
+    },
+  ]
+
   # Trailing stoploss (not used)
   trailing_stop = False
   trailing_only_offset_is_reached = True
