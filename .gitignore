@@ -1,0 +1,22 @@
+# Secrets — never commit
+.env
+user_data/config-private.json
+
+# Local data/logs — large, not needed in repo
+user_data/data/
+user_data/logs/
+user_data/backtest_results/
+user_data/hyperopt_results/
+user_data/notebooks/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+.idea/
