@@ -1,10 +1,10 @@
 {
   "strategy": "NostalgiaForInfinityX7",
   "add_config_files": [
-    "C:/TradingBots/NFI/user_data/trading_mode-futures.json",
-    "C:/TradingBots/NFI/user_data/pairlist-volume-binance-usdt.json",
-    "C:/TradingBots/NFI/user_data/blacklist-binance.json",
-    "C:/TradingBots/NFI/user_data/exampleconfig.json",
-    "C:/TradingBots/NFI/user_data/config-private.json"
+    "trading_mode-futures.json",
+    "pairlist-volume-binance-usdt.json",
+    "blacklist-binance.json",
+    "exampleconfig.json",
+    "config-private.json"
   ]
 }
