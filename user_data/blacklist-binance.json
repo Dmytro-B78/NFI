@@ -17,7 +17,9 @@
       // Delisting
       "(MKR|OMNI)/.*",
       // Tokenized stocks (STOCK suffix — universal forward-protection)
-      ".*STOCK/.*"
+      ".*STOCK/.*",
+      // Custom blacklist (low liquidity / non-crypto)
+      "(IDOL|UB)/.*"
     ]
   }
 }
