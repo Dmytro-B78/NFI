@@ -20,3 +20,9 @@ __pycache__/
 Thumbs.db
 
 .idea/
+# Dry-run database — local state, not for repo
+tradesv3.dryrun.sqlite*
+tradesv3.dryrun.pre-reset_*.sqlite*
+archive_*.log
+summary_*.log
+user_data/nfix7-profit_max-*.json
