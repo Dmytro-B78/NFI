@@ -26,3 +26,10 @@ tradesv3.dryrun.pre-reset_*.sqlite*
 archive_*.log
 summary_*.log
 user_data/nfix7-profit_max-*.json
+# Backtest working artifacts — local only, snapshots drift between sessions
+backtest*_full.log
+user_data/backtest-fixed-stake.json
+user_data/pairlist-raw*.json
+user_data/pairlist-static-backtest*.json
+user_data/strategies/*.pre-v376.bak
+user_data/strategies_v376/
