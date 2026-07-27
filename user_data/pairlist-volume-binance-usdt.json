@@ -2,7 +2,7 @@
   "pairlists": [
     {
       "method": "VolumePairList",
-      "number_assets": 200,
+      "number_assets": 100,
       "sort_key": "quoteVolume",
       "refresh_period": 1800
     },
@@ -32,9 +32,10 @@
     // },
     {
       "method": "VolumePairList",
-      "number_assets": 120,
+      "number_assets": 80,
       "sort_key": "quoteVolume"
     },
     // { "method": "ShuffleFilter" }
   ]
 }
+
