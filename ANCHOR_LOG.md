@@ -17,6 +17,30 @@ anchor на текущий пейрлист-снимок; при смене сн
 ## ACTIVE
 
 **Дата фиксации:** 2026-08-01
+**Код (наш):** v17.4.488, commit `90456b4`
+**Код (апстрим):** commit `b2c7badc1` (signal 562: add protection round 3, третий подряд protection-коммит на сигнал 562)
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4.json` (79 пар, без изменений с 30.07.2026)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250101-20260724)
+**Результаты:** `backtest_v488_candidate_full.log`
+
+Патч подтверждён как **no-op**: результат побитово идентичен предыдущему ACTIVE (v485) -- 478 trades, все метрики совпадают до сотых, тег 562 -- те же 66 сделок/+178.53 USDT с теми же подтегами. Новая AND-ветка ни разу не сработала в этом окне данных. Три подряд protection-коммита на сигнал 562 (v484/v485/v488) не изменили ни одной сделки в истории -- задеплоен как безопасный, без измеримого эффекта.
+
+| Метрика | Значение |
+|---|---|
+| Trades | 478 |
+| Total profit | 55069.479 USDT (5506.95%) -- см. методологическую оговорку в SUPERSEDED ниже, не сравнивать напрямую с anchor старше 01.08.2026 |
+| Sharpe (closed trades) | 8.54 |
+| Sortino (closed trades) | 3.68 |
+| Calmar (closed trades) | 4206.69 |
+| SQN | 11.56 |
+| Profit factor | 19.61 |
+| Max % underwater (closed trades) | 4.42% |
+| Max % underwater (wallet balance) | 8.76% |
+| Worst trade | ERA/USDT:USDT -20.30% |
+| Worst pair | ONDO/USDT:USDT -110.49% |
+
+## SUPERSEDED
+**Дата фиксации:** 2026-08-01
 **Код (наш):** v17.4.485, commit `b94e0cc`
 **Код (апстрим):** commit `44f0d867d` (signal 562: add protection x2 -- 15c01a2/v484, 44f0d867/v485)
 **Пейрлист-снимок:** `pairlist-static-backtest-derisk4.json` (79 пар, без изменений с 30.07.2026)
