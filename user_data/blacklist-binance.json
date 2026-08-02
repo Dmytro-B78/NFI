@@ -2,6 +2,7 @@
   "exchange": {
     "pair_blacklist": [
       "PUMP/USDT:USDT",
+      "FIGHT/.*",
       "(BNB)/.*",
       "(1000.*).*/.*",
       ".*(_PREMIUM|BEAR|BULL|HALF|HEDGE|UP|DOWN|[1235][SL])/.*",
