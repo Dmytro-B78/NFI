@@ -44,7 +44,8 @@
       "CBRS/USDT:USDT",
       "DRAM/USDT:USDT",
       "LITE/USDT:USDT",
-      "NBIS/USDT:USDT"
+      "NBIS/USDT:USDT",
+      "TUT/USDT:USDT"
     ]
   }
 }
