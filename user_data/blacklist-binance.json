@@ -45,7 +45,10 @@
       "DRAM/USDT:USDT",
       "LITE/USDT:USDT",
       "NBIS/USDT:USDT",
-      "TUT/USDT:USDT"
+      "TUT/USDT:USDT",
+      "ACX/USDT:USDT",
+      "PIVX/USDT:USDT",
+      "VIC/USDT:USDT"
     ]
   }
 }
