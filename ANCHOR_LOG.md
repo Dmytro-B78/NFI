@@ -16,6 +16,49 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-08-02
+**Код (наш):** v17.4.491, commit `07523a5`
+**Код (апстрим):** commits `b2c7badc1`->`...` (signal 3, v489; signal 562 round4, v490; signal 562 round5, v491; signal 64, без бампа версии)
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4.json` (79 пар, без изменений с 30.07.2026)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250101-20260724)
+**Результаты:** `backtest_candidate_v491_full.log`
+
+Патч подтверждён как **no-op**: результат (484 trades, 387.69%) побитово
+совпал со старой anchor-записью от 30.07.2026 (v434, `backtest_anchor_v434_derisk4_full.log`),
+а НЕ с "новой" anchor-записью от 01.08.2026 (478 trades, 5506.95%). Причина
+расхождения между 30.07- и 01.08-прогонами на идентичном коде/снимке
+по-прежнему не подтверждена контрольным прогоном (см. Pending); рабочая
+гипотеза -- разница в `--config backtest-fixed-stake.json`. Новые AND-условия
+(signal 3, 562 round4/round5, signal 64) ни разу не сработали в этом окне
+данных -- задеплоен как безопасный, без измеримого эффекта.
+
+**Важно:** апстрим переписывает историю задним числом (commit SHA
+`b2c7badc1` на дату деплоя даёт другой контент, чем при проверке позже).
+Кандидат для этого прогона собирался прямым сопоставлением против боевого
+файла (raw.githubusercontent.com), не реконструкцией через commit-graph.
+
+| Метрика | Значение |
+|---|---|
+| Trades | 484 |
+| Total profit | 3 876.863 USDT (387.69%) -- методологическая оговорка выше применима |
+| CAGR | 177.82% |
+| Sharpe (closed trades) | 12.25 |
+| Sortino (closed trades) | 4.74 |
+| Calmar (closed trades) | 758.06 |
+| SQN | 16.48 |
+| Profit factor | 46.26 |
+| Expectancy (Ratio) | 8.01 (0.19) |
+| Worst day | -85.667 USDT |
+| Max % underwater (closed trades) | 1.73% |
+| Max % underwater (wallet balance) | 3.73% |
+| Long / Short trades | 376 / 108 |
+| Long / Short profit | 363.38% / 24.31% |
+| Worst trade | ERA/USDT:USDT -20.30% |
+
+---
+
+## SUPERSEDED
+
 **Дата фиксации:** 2026-08-01
 **Код (наш):** v17.4.488, commit `90456b4`
 **Код (апстрим):** commit `b2c7badc1` (signal 562: add protection round 3, третий подряд protection-коммит на сигнал 562)
