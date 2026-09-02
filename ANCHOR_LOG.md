@@ -16,6 +16,39 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-09-02
+**Код (наш):** v17.5.7, commit `638e615` (class-name fix; функциональный деплой v17.5.7 -- `114e86b`/`638e615`, см. SYSTEM_KNOWLEDGE.md rev.32)
+**Код (апстрим):** upstream v17.5.7 (детали апдейта v17.4.491 -> v17.5.7 см. SYSTEM_KNOWLEDGE.md rev.32)
+**Пейrlist-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары -- top-80 через VolumePairList минус блэклист минус 7 пар без исторических данных/leverage tiers: SKHYNIX, KORU, SAMSUNG, MVLL, BMNR, BTW, AXTI; свежая генерация 02.09.2026 -- состав дрейфовал от старого derisk4 из-за смены рыночного объёма и новых листингов)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Результаты:** `backtest_anchor_v1757_full.log`
+**Anchor-bootstrap для новой code-baseline v17.5.7** (первый прогон после апдейта 491 -> 17.5.7 и фикса class-name бага, см. SYSTEM_KNOWLEDGE.md rev.32). **Zero-loss аномалия подтверждена и на новом снимке**: 412/412 сделок закрыты в плюс -- согласуется с ранее диагностированным механизмом grind/signal 661 rework (переводит убыточные по старой логике сделки в close-to-zero/small-profit exit вместо stop_loss). **Методологическая оговорка**: при нулевом числе убытков Sortino/Calmar (closed) и Profit factor выводятся freqtrade как sentinel-значения (-100.00 / -100.00 / 0.00) и не являются реальными метриками риска -- для будущих A/B на этой code-baseline использовать Sharpe (closed), SQN, CAGR %, и wallet-based Sharpe/Sortino/Calmar.
+| Метрика | Значение |
+|---|---|
+| Trades | 412 |
+| Total profit | 3614.203 USDT (361.42%) |
+| CAGR | 168.08% |
+| Sharpe (closed trades) | 11.41 |
+| Sortino (closed trades) | не применимо (sentinel -100.00, см. оговорку) |
+| Calmar (closed trades) | не применимо (sentinel -100.00, см. оговорку) |
+| SQN | 16.64 |
+| Profit factor | не применимо (sentinel 0.00, см. оговорку) |
+| Expectancy (Ratio) | 8.77 (100.00) |
+| Max % underwater (closed trades) | 0.00% |
+| Max % underwater (wallet balance) | 4.06% |
+| Absolute drawdown (wallet) | 109.926 USDT (2.70%) |
+| Sharpe (daily wallet balance) | 3.97 |
+| Sortino (daily wallet balance) | 8.78 |
+| Calmar (daily wallet balance) | 452.37 |
+| Worst trade | ONDO/USDT:USDT +0.05% (нет убыточных сделок) |
+| Best trade | ONDO/USDT:USDT +85.11% |
+| Long / Short trades | 330 / 82 |
+
+---
+
+## SUPERSEDED
+
+**Заменён 02.09.2026 -- деплой code-baseline v17.5.7 (см. SYSTEM_KNOWLEDGE.md rev.32).**
 **Дата фиксации:** 2026-08-02
 **Код (наш):** v17.4.491, commit `07523a5`
 **Код (апстрим):** commits `b2c7badc1`->`...` (signal 3, v489; signal 562 round4, v490; signal 562 round5, v491; signal 64, без бампа версии)
