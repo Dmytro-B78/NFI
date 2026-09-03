@@ -53,6 +53,7 @@
       "NIGHT/USDT:USDT",
       "TAC/USDT:USDT",
       "DEXE/USDT:USDT",
+      "(BLC|AFX|VRSC)/.*",
       "OPG/USDT:USDT",
       "APR/USDT:USDT",
       "VELVET/USDT:USDT",
