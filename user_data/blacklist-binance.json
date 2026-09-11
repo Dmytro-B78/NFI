@@ -78,7 +78,10 @@
       "TQQQ/USDT:USDT",
       "BZ/USDT:USDT",
       "NATGAS/USDT:USDT",
-      "XPT/USDT:USDT"
+      "XPT/USDT:USDT",
+      "JCT/USDT:USDT",
+      "BOB/USDT:USDT",
+      "(龙虾|哈基米|牛来|我踏马来了|老子|人生K线|小股东|旺财)/.*"
     ]
   }
 }
