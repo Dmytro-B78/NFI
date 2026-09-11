@@ -33,3 +33,6 @@ user_data/pairlist-raw*.json
 user_data/pairlist-static-backtest*.json
 user_data/strategies/*.pre-v376.bak
 user_data/strategies_v376/
+
+# Server security scripts — secrets stay local to the server, never in git
+server-security/.env

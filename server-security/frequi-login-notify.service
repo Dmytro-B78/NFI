@@ -1,0 +1,14 @@
+[Unit]
+Description=Telegram notifier for FreqUI dashboard logins (NFI)
+After=freqtrade-nfi.service
+Requires=freqtrade-nfi.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/opt/nfi-server-security/frequi-login-notify.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
