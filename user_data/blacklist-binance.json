@@ -81,6 +81,10 @@
       "XPT/USDT:USDT",
       "JCT/USDT:USDT",
       "BOB/USDT:USDT",
+      "AVA/USDT:USDT",
+      "SCR/USDT:USDT",
+      "TOWNS/USDT:USDT",
+      "GNS/USDT:USDT",
       "(龙虾|哈基米|牛来|我踏马来了|老子|人生K线|小股东|旺财)/.*"
     ]
   }
