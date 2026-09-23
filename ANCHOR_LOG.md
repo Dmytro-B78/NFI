@@ -16,6 +16,52 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-09-23
+**Код (наш):** v17.5.7, commit `638e615` (код без изменений с 02.09.2026)
+**Код (апстрим):** upstream v17.5.7 (без изменений)
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (тот же файл, 73 пары; 2 из них -- `CLO/USDT:USDT` (патч блэклиста 03.09.2026, `33977f1`) и `龙虾/USDT:USDT` (regex-кластер китайских мем-тикеров) -- теперь в блэклисте и отфильтровываются freqtrade, эффективно 71 пара)
+**Блэклист:** состояние на commit `81f9a21` (13.09.2026)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Конфиг-оверлеи (ОБЯЗАТЕЛЬНО для кандидата):** `--config user_data/backtest-fixed-stake.json --config user_data/backtest-wallet1000.json` (stake 150, dry_run_wallet 1000 -- второй оверлей нужен, т.к. в exampleconfig.json с 22.09.2026 dry_run_wallet=2000)
+**Результаты:** `backtest_badtrade_anchor_base_full.log`
+
+**Причина новой записи:** перепрогон боевого кода на том же снимке, timerange
+и кошельке НЕ воспроизвёл запись от 02.09.2026 (388 trades / 3433.528 USDT
+против 412 / 3614.203). Код, снимок, timerange, stake и wallet идентичны,
+изменился только блэклист (патчи 03.09-13.09.2026). Вероятная причина --
+выпадение CLO и 龙虾 из снимка (отдельным прогоном не доказано). Урок:
+изменение блэклиста инвалидирует anchor даже без генерации нового снимка.
+Zero-loss сохраняется (388/388), sentinel-оговорка прежняя: Sortino/Calmar
+(closed) и Profit factor не использовать.
+
+| Метрика | Значение |
+|---|---|
+| Trades | 388 |
+| Total profit | 3433.528 USDT (343.35%) |
+| CAGR | 161.26% |
+| Sharpe (closed trades) | 10.63 |
+| Sortino (closed trades) | не применимо (sentinel -100.00) |
+| Calmar (closed trades) | не применимо (sentinel -100.00) |
+| SQN | 15.97 |
+| Profit factor | не применимо (sentinel 0.00) |
+| Expectancy (Ratio) | 8.85 (100.00) |
+| Max % underwater (closed trades) | 0.00% |
+| Max % underwater (wallet balance) | 4.06% |
+| Absolute drawdown (wallet) | 109.926 USDT (2.75%) |
+| Sharpe (daily wallet balance) | 3.87 |
+| Sortino (daily wallet balance) | 8.63 |
+| Calmar (daily wallet balance) | 422.24 |
+| Worst trade | ONDO/USDT:USDT +0.05% (нет убыточных сделок) |
+| Best trade | ONDO/USDT:USDT +85.11% |
+| Long / Short trades | 308 / 80 |
+| Best day | 529.321 USDT |
+| Days win/draw/lose | 173 / 380 / 0 |
+
+---
+
+## SUPERSEDED
+
+**Заменён 23.09.2026 -- не воспроизводится после изменений блэклиста 03.09-13.09.2026 (см. ACTIVE выше).**
 **Дата фиксации:** 2026-09-02
 **Код (наш):** v17.5.7, commit `638e615` (class-name fix; функциональный деплой v17.5.7 -- `114e86b`/`638e615`, см. SYSTEM_KNOWLEDGE.md rev.32)
 **Код (апстрим):** upstream v17.5.7 (детали апдейта v17.4.491 -> v17.5.7 см. SYSTEM_KNOWLEDGE.md rev.32)
