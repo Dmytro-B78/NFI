@@ -1,8 +1,0 @@
-{
-  "thresholds": [0.5, 1.0, 1.5],
-  "state_file": "loss_watch_state.json",
-  "private_config": "../user_data/config-private.json",
-  "telegram_api_base": "https://api.telegram.org",
-  "request_timeout_sec": 15,
-  "message_template": "Loss watch: {pair} (#{trade_id}, tag {tag}). Realized loss {loss:.1f} USDT = {ratio_pct:.0f}% of first margin {first_margin:.1f} USDT; threshold {level_pct:.0f}% crossed. Open since {open_date}."
-}

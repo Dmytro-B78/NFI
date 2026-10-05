@@ -36,7 +36,3 @@ user_data/strategies_v376/
 
 # Server security scripts — secrets stay local to the server, never in git
 server-security/.env
-
-# loss_watch runtime state (server-local)
-scripts/loss_watch_state.json
-scripts/loss_watch_state.json.tmp
