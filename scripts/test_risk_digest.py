@@ -207,6 +207,16 @@ def test_env_file_parse_and_overrides():
     assert rd.load_env_file("/nonexistent/.env") == {}
 
 
+def test_zero_balance_is_rejected():
+    for bad in (0, 0.0, -5):
+        try:
+            rd.decide(CFG, "digest", {"trades": book(), "balance": bad, "max_open": 8}, {}, "t", NOW)
+        except ValueError as e:
+            assert "refusing" in str(e)
+        else:
+            raise AssertionError("balance %s was accepted" % bad)
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:

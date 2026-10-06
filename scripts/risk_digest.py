@@ -169,6 +169,8 @@ def format_alert(cfg, rep, new_flags, ts):
 def decide(cfg, mode, data, state, ts, now_ts):
     """Pure core. Returns (message or None, new_state, log_row)."""
     balance = float(data["balance"])
+    if balance <= 0:
+        raise ValueError("balance from API is %s: refusing to report" % balance)
     peak = max(float(state.get("peak", cfg["peak_seed_usdt"])), balance)
     rep = analyze(data["trades"], balance, peak, data["max_open"], cfg, now_ts)
     keys = [k for k, _ in rep["flags"]]
