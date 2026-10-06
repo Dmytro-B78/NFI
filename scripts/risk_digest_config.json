@@ -25,5 +25,6 @@
     "drawdown": "Флаг: баланс ниже пика на {drawdown_pct:.1f}% (порог {thr:.0f}%)",
     "margin": "Флаг: {margin_pct:.0f}% баланса занято маржей (порог {thr:.0f}%)"
   },
-  "alert_header_template": "Risk alert {ts} UTC (баланс {balance:.1f} USDT, слоты {n_open}/{max_open})"
+  "alert_header_template": "Risk alert {ts} UTC (баланс {balance:.1f} USDT, слоты {n_open}/{max_open})",
+  "env_file": "../.env"
 }

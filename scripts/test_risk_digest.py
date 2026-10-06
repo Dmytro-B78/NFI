@@ -189,6 +189,24 @@ def test_fetch_data_against_mock_api():
     assert sorted(seen["paths"]) == ["/api/v1/balance", "/api/v1/show_config", "/api/v1/status"]  # GET only
 
 
+def test_env_file_parse_and_overrides():
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / ".env"
+        f.write_text("# comment\nFREQTRADE__API_SERVER__USERNAME=bot\nFREQTRADE__API_SERVER__PASSWORD='s3'\n"
+                     "\nLog freqtrade\nPas something\nFREQTRADE__EXCHANGE__KEY=k\n", encoding="utf-8")
+        env = rd.load_env_file(f)
+    assert env["FREQTRADE__API_SERVER__USERNAME"] == "bot" and env["FREQTRADE__API_SERVER__PASSWORD"] == "s3"
+    assert "Log freqtrade" not in env and len(env) == 3
+    private = {"api_server": {"username": "old", "password": "old", "listen_port": 8080},
+               "telegram": {"token": "cfg", "chat_id": "1"}}
+    out = rd.apply_env_overrides(private, env)
+    assert out["api_server"]["username"] == "bot" and out["api_server"]["password"] == "s3"
+    assert out["api_server"]["listen_port"] == 8080 and out["telegram"]["token"] == "cfg"
+    out2 = rd.apply_env_overrides({"telegram": {"token": "cfg"}}, {"FREQTRADE__TELEGRAM__TOKEN": "envtok"})
+    assert out2["telegram"]["token"] == "envtok"
+    assert rd.load_env_file("/nonexistent/.env") == {}
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:

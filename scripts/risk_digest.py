@@ -48,6 +48,31 @@ def load_json(path, default=None):
         return json.load(f)
 
 
+def load_env_file(path):
+    """KEY=VALUE lines of the systemd EnvironmentFile; anything else is ignored."""
+    env = {}
+    p = Path(path)
+    if not p.exists():
+        return env
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        env[key.strip()] = val.strip().strip("\"'")
+    return env
+
+
+def apply_env_overrides(private, env):
+    """Same rule as freqtrade: FREQTRADE__SECTION__KEY overrides the config value."""
+    for section in ("api_server", "telegram"):
+        for key in list(private.get(section, {})) + ["username", "password"]:
+            name = "FREQTRADE__%s__%s" % (section.upper(), key.upper())
+            if name in env and (key in private.get(section, {}) or section == "api_server"):
+                private.setdefault(section, {})[key] = env[name]
+    return private
+
+
 def pct(part, whole):
     return part / whole * 100.0 if whole else 0.0
 
@@ -208,7 +233,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print only: no send, no state, no log")
     args = ap.parse_args()
     cfg = load_json(CONFIG_PATH)
-    private = load_json(HERE / cfg["private_config"])
+    env = dict(load_env_file(HERE / cfg["env_file"]))
+    env.update(os.environ)
+    private = apply_env_overrides(load_json(HERE / cfg["private_config"]), env)
     state_path, log_path = HERE / cfg["state_file"], HERE / cfg["log_file"]
     state = load_json(state_path, default={})
     data = fetch_data(private["api_server"], cfg["request_timeout_sec"])
