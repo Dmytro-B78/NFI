@@ -199,7 +199,7 @@ def fetch_data(api, timeout):
     return {
         "trades": http_json(base + "/status", hdr, timeout),
         "balance": http_json(base + "/balance", hdr, timeout)["total"],
-        "max_open": http_json(base + "/show_config", hdr, timeout)["max_open_trades"],
+        "max_open": int(http_json(base + "/show_config", hdr, timeout)["max_open_trades"]),
     }
 
 
