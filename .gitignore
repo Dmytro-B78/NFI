@@ -36,3 +36,9 @@ user_data/strategies_v376/
 
 # Server security scripts — secrets stay local to the server, never in git
 server-security/.env
+
+# risk_digest runtime files (server-local)
+scripts/risk_digest_state.json
+scripts/risk_digest_state.json.tmp
+scripts/risk_digest_log.csv
+scripts/risk_digest.log

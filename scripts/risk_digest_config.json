@@ -1,0 +1,29 @@
+{
+  "private_config": "../user_data/config-private.json",
+  "state_file": "risk_digest_state.json",
+  "log_file": "risk_digest_log.csv",
+  "telegram_api_base": "https://api.telegram.org",
+  "request_timeout_sec": 15,
+  "message_max_len": 4000,
+  "peak_seed_usdt": 2800.0,
+  "thresholds": {
+    "underwater_margin_pct_of_balance": 50.0,
+    "trade_total_loss_pct_of_balance": 5.0,
+    "liquidation_distance_pct": 15.0,
+    "balance_drawdown_pct": 10.0,
+    "margin_pct_of_balance": 80.0
+  },
+  "na_text": "н/д",
+  "header_template": "Risk digest {ts} UTC\nБаланс {balance:.1f} USDT, пик {peak:.1f}, ниже пика на {drawdown_pct:.1f}%\nСлоты {n_open}/{max_open}, маржа {margin:.1f} ({margin_pct:.1f}% баланса), в убыточных {uw_margin:.1f} ({uw_margin_pct:.1f}%)\nОткрытые позиции: нереализ. {unreal:+.1f}, реализ. {realized:+.1f}, итого {total:+.1f} USDT",
+  "trade_template": "{pair} #{trade_id}: маржа {margin:.1f} ({margin_pct:.1f}%), реализ. {realized:+.1f}, нереализ. {unreal:+.1f}, итого {total:+.1f} ({total_pct:+.1f}% баланса); цена {rate:.6g}, до безубытка остатка {be_txt}, до ликвидации {liq_txt}; открыта {age_days:.1f} д",
+  "no_trades_text": "Открытых позиций нет",
+  "no_flags_text": "Флагов нет",
+  "flag_templates": {
+    "underwater_margin": "Флаг: {uw_margin_pct:.0f}% баланса в марже убыточных позиций (порог {thr:.0f}%)",
+    "trade_loss": "Флаг: {pair} #{trade_id} суммарный убыток {total_pct:.1f}% баланса (порог {thr:.0f}%)",
+    "liquidation": "Флаг: {pair} #{trade_id} до ликвидации {liq:.0f}% (порог {thr:.0f}%)",
+    "drawdown": "Флаг: баланс ниже пика на {drawdown_pct:.1f}% (порог {thr:.0f}%)",
+    "margin": "Флаг: {margin_pct:.0f}% баланса занято маржей (порог {thr:.0f}%)"
+  },
+  "alert_header_template": "Risk alert {ts} UTC (баланс {balance:.1f} USDT, слоты {n_open}/{max_open})"
+}
