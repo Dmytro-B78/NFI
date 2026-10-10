@@ -16,6 +16,57 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-10-10
+**Код (наш):** v17.5.7, commit `638e615` (код без изменений с 02.09.2026)
+**Код (апстрим):** upstream v17.5.7 (без изменений)
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (тот же файл, 73 пары; 4 в блэклисте и отфильтровываются freqtrade -- `ACE`, `AKE` (блок "Low cap" авторского блэклиста), `CLO`, `龙虾`; эффективно 69 пар, сделки по 44)
+**Блэклист:** commit `b38178c` (10.10.2026, авторский блэклист + наши доп. блоки)
+**max_open_trades:** 8 (как в бою с 06.10.2026, commit `71e6b7c`)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Конфиг-оверлеи (ОБЯЗАТЕЛЬНО для кандидата):** `--config user_data/backtest-wallet1000.json --config user_data/backtest-max8-stake112.json` (dry_run_wallet 1000, max_open_trades 8, stake 112.5 = 900/8 -- та же загрузка капитала, что 6x150 у прошлых записей). `backtest-fixed-stake.json` НЕ подключать.
+**Результаты:** `backtest_v17559_anchor_base_full.log`
+
+**Причина новой записи:** смена блэклиста (`b38178c`) и max_open_trades 6 -> 8.
+Абсолютные цифры с прошлыми записями не сравнимы (другие слоты/stake и состав пар).
+**Zero-loss больше нет:** 1 убыточная закрытая сделка (INJ -5.72%), поэтому
+Profit factor и Calmar (closed) теперь реальные значения; Sortino (closed) по-прежнему
+sentinel -100.00 -- не использовать.
+
+**Первое применение (10.10.2026):** A/B кандидата v17.5.159 (апстрим HEAD + наши 2 патча,
+`user_data/strategies_v17559_test/`) -- ОТКЛОНЁН: 340 сделок против 389, хуже по прибыли,
+CAGR, Sharpe/Calmar (closed), PF, worst day, просадке (closed и wallet), Sortino/Calmar (wallet);
+лучше маргинально SQN, Expectancy, Sharpe (wallet). Сигнал 562: 45 -> 12 сделок.
+Лог: `backtest_v17559_anchor_cand_full.log`; as-live (20260901-20261005, wallet 2000, unlimited):
+`backtest_v17559_aslive_{base,cand}_full.log` -- 49/+417.887 против 47/+404.812 USDT, красных флагов нет.
+
+| Метрика | Значение |
+|---|---|
+| Trades | 389 |
+| Total profit | 2559.45 USDT (255.94%) |
+| CAGR | 126.76% |
+| Sharpe (closed trades) | 10.39 |
+| Sortino (closed trades) | не применимо (sentinel -100.00) |
+| Calmar (closed trades) | 879.10 |
+| SQN | 15.59 |
+| Profit factor | 85.18 |
+| Expectancy (Ratio) | 6.58 (0.22) |
+| Max % underwater (closed trades) | 0.98% |
+| Max % underwater (wallet balance) | 3.31% |
+| Absolute drawdown (wallet) | 95.524 USDT (2.98%) |
+| Sharpe (daily wallet balance) | 3.85 |
+| Sortino (daily wallet balance) | 9.05 |
+| Calmar (daily wallet balance) | 290.82 |
+| Worst trade | INJ/USDT:USDT -5.72% (единственная убыточная) |
+| Best trade | ONDO/USDT:USDT +85.11% |
+| Long / Short trades | 309 / 80 |
+| Best day / Worst day | 395.981 USDT / -8.608 USDT |
+| Days win/draw/lose | 168 / 384 / 1 |
+
+---
+
+## SUPERSEDED
+
+**Заменён 10.10.2026 -- смена блэклиста (`b38178c`) и max_open_trades 6 -> 8 (см. ACTIVE выше).**
 **Дата фиксации:** 2026-09-23
 **Код (наш):** v17.5.7, commit `638e615` (код без изменений с 02.09.2026)
 **Код (апстрим):** upstream v17.5.7 (без изменений)
