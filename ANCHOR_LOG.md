@@ -16,6 +16,48 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-10-10 (вторая запись этого дня, после деплоя v17.5.159)
+**Код (наш):** v17.5.159, commit `f1a1547` (задеплоено 10.10.2026 12:58)
+**Код (апстрим):** iterativv X7-файл на `cf971e88` (09.10.2026) + наши 2 патча (protections, 661_enable), diff 19 строк
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары; ACE, AKE, CLO, 龙虾 в блэклисте -- эффективно 69 пар)
+**Блэклист:** commit `b38178c` (10.10.2026)
+**max_open_trades:** 8
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Конфиг-оверлеи (ОБЯЗАТЕЛЬНО для кандидата):** `--config user_data/backtest-wallet1000.json --config user_data/backtest-max8-stake112.json` (`backtest-fixed-stake.json` НЕ подключать)
+**Результаты:** `backtest_v17559_anchor_cand_full.log` (прогон 10.10.2026 как кандидат A/B; условия идентичны записи ниже, поэтому без перепрогона)
+
+**Причина новой записи:** смена code-baseline -- v17.5.159 задеплоена по решению
+пользователя, несмотря на отрицательный A/B против v17.5.7 (см. запись ниже).
+Sortino (closed) -- sentinel -100.00, не использовать. 1 убыточная сделка (INJ).
+
+| Метрика | Значение |
+|---|---|
+| Trades | 340 |
+| Total profit | 2382.697 USDT (238.27%) |
+| CAGR | 119.44% |
+| Sharpe (closed trades) | 9.75 |
+| Sortino (closed trades) | не применимо (sentinel -100.00) |
+| Calmar (closed trades) | 732.58 |
+| SQN | 15.64 |
+| Profit factor | 74.53 |
+| Expectancy (Ratio) | 7.01 (0.22) |
+| Max % underwater (closed trades) | 1.10% |
+| Max % underwater (wallet balance) | 3.36% |
+| Absolute drawdown (wallet) | 95.988 USDT (3.15%) |
+| Sharpe (daily wallet balance) | 3.97 |
+| Sortino (daily wallet balance) | 8.34 |
+| Calmar (daily wallet balance) | 256.30 |
+| Worst trade | INJ/USDT:USDT -6.37% (единственная убыточная) |
+| Best trade | ONDO/USDT:USDT +85.11% |
+| Long / Short trades | 294 / 46 (тег 562: 12 сделок) |
+| Best day / Worst day | 337.351 USDT / -10.61 USDT |
+| Days win/draw/lose | 142 / 410 / 1 |
+
+---
+
+## SUPERSEDED
+
+**Заменён 10.10.2026 -- деплой code-baseline v17.5.159 (`f1a1547`), см. ACTIVE выше.**
 **Дата фиксации:** 2026-10-10
 **Код (наш):** v17.5.7, commit `638e615` (код без изменений с 02.09.2026)
 **Код (апстрим):** upstream v17.5.7 (без изменений)
