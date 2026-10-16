@@ -76,7 +76,6 @@ class NostalgiaForInfinityX7(IStrategy):
   stoploss = -0.99
 
   protections = [
-    {"method": "CooldownPeriod", "stop_duration_candles": 6},
     {
       "method": "StoplossGuard",
       "lookback_period_candles": 288,
