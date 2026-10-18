@@ -13,6 +13,8 @@
       "(BLUR)/.*",
       "(BLAST)/.*",
       "(DOS)/.*",
+      "(STBL)/.*",
+      "(NXPC)/.*",
       "(APR|JCT|VELVET)/.*",
       "(ACX|PIVX|VIC)/.*",
       "(FIGHT|IDOL)/.*",
