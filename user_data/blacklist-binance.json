@@ -15,6 +15,7 @@
       "(DOS)/.*",
       "(STBL)/.*",
       "(NXPC)/.*",
+      "(CYS)/.*",
       "(APR|JCT|VELVET)/.*",
       "(ACX|PIVX|VIC)/.*",
       "(FIGHT|IDOL)/.*",
