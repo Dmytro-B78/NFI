@@ -11,8 +11,10 @@ whitelist or with open trades):
               (empty author_blacklist_url in the config turns it off)
   hour_spike  one 1h candle with a huge range (DOS 2026-10-12: 486%)
   day_spike   rolling 24h range above the spike level (TAC: 215% day)
-  swing_flat  big rolling 24h range with a flat result (NXPC 2026-10-15:
-              63% range, +4% close - a 3-day RangeStabilityFilter misses it)
+  swing_flat  big rolling 24h range, most of it given back: |net| is at most
+              swing_net_to_range of the range (NXPC 2026-10-15: 52% wick at
+              16:00 UTC, by 19:00 net +19% of a 61% range; a 3-day
+              RangeStabilityFilter on closes misses it)
   bleed       far below the recent high and still falling (AEON-type)
 All thresholds and texts live in blacklist_scout_config.json.
 
@@ -112,10 +114,10 @@ def detect_hourly(h1, cfg):
         chg = (w[-1][4] - w[0][1]) / w[0][1] * 100.0
         end = utc_text(w[-1][5] + 1)
         if rng >= th["day_range_pct"]:
-            if spike is None or rng > spike[0]:
+            if spike is None or rng >= spike[0]:  # ties: keep the latest window
                 spike = (rng, end)
-        elif rng >= th["swing_range_pct"] and abs(chg) <= th["swing_close_pct"]:
-            if swing is None or rng > swing[0]:
+        elif rng >= th["swing_range_pct"] and abs(chg) <= rng * th["swing_net_to_range"]:
+            if swing is None or rng >= swing[0]:
                 swing = (rng, chg, end)
     if spike:
         found.append(("day_spike", tpl["day_spike"].format(time=spike[1], range=spike[0])))

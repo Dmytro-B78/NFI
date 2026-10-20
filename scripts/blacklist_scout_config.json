@@ -21,7 +21,7 @@
     "hour_range_pct": 80.0,
     "day_range_pct": 100.0,
     "swing_range_pct": 50.0,
-    "swing_close_pct": 10.0,
+    "swing_net_to_range": 0.33,
     "bleed_high_days": 90,
     "bleed_off_high_pct": 55.0,
     "bleed_7d_pct": 30.0

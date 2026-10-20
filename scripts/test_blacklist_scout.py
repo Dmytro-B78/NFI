@@ -71,6 +71,42 @@ def test_swing_flat_nxpc_shape():
     assert keys == ["swing_flat"], keys
 
 
+# Real NXPCUSDT 1h candles 2026-10-14 23:00 .. 2026-10-15 22:00 UTC (server output 2026-10-20).
+NXPC_1015 = [
+    (0.1994, 0.2003, 0.1992, 0.1998), (0.1999, 0.2007, 0.1966, 0.1970), (0.1972, 0.1982, 0.1968, 0.1968),
+    (0.1968, 0.1970, 0.1864, 0.1918), (0.1918, 0.1924, 0.1893, 0.1901), (0.1901, 0.1928, 0.1895, 0.1920),
+    (0.1920, 0.1921, 0.1873, 0.1876), (0.1876, 0.1900, 0.1874, 0.1895), (0.1895, 0.1903, 0.1885, 0.1901),
+    (0.1902, 0.1912, 0.1892, 0.1911), (0.1912, 0.1912, 0.1891, 0.1892), (0.1891, 0.1896, 0.1881, 0.1890),
+    (0.1890, 0.1903, 0.1882, 0.1894), (0.1895, 0.1901, 0.1872, 0.1889), (0.1889, 0.1901, 0.1876, 0.1897),
+    (0.1898, 0.1941, 0.1895, 0.1941), (0.1939, 0.1975, 0.1937, 0.1973), (0.1974, 0.3000, 0.1968, 0.2652),
+    (0.2653, 0.2763, 0.2393, 0.2539), (0.2539, 0.2540, 0.2348, 0.2366), (0.2366, 0.2432, 0.2314, 0.2339),
+    (0.2337, 0.2386, 0.2291, 0.2322), (0.2324, 0.2342, 0.2251, 0.2268), (0.2268, 0.2271, 0.2231, 0.2248),
+]
+
+
+def nxpc_hours(n_real):
+    start = T0 + 24 * H  # 24 calm hours before, roughly the real 10-14 level
+    pre = calm_hours(24, 0.1995)
+    real = [k(start + i * H, o, h, lo, c, H) for i, (o, h, lo, c) in enumerate(NXPC_1015[:n_real])]
+    return bs.candles(pre + real)
+
+
+def test_nxpc_real_caught_before_our_entry():
+    # 20 real candles = closed through 18:59 UTC: net +18.6% of a 61% range -> swing_flat
+    keys = [x for x, _ in bs.detect_hourly(nxpc_hours(20), CFG)]
+    assert keys == ["swing_flat"], keys
+    # at 23:00 UTC (our bot entered 23:35) it is still flagged
+    assert [x for x, _ in bs.detect_hourly(nxpc_hours(24), CFG)] == ["swing_flat"]
+    # at 18:00 UTC price is still near the top (net +27% of 61%): not yet a swing
+    assert bs.detect_hourly(nxpc_hours(19), CFG) == []
+
+
+def test_trend_day_is_not_swing():
+    h1 = bs.candles(calm_hours(24) + [k(T0 + (24 + i) * H, 1.0 + 0.025 * i, 1.0 + 0.025 * (i + 1),
+                                        1.0 + 0.025 * i, 1.0 + 0.025 * (i + 1), H) for i in range(24)])
+    assert bs.detect_hourly(h1, CFG) == []  # +60% straight up: range ~ net
+
+
 def test_spikes_dos_shape():
     h1 = bs.candles(calm_hours(60) + [k(T0 + 60 * H, 0.3785, 0.8542, 0.1456, 0.2002, H)] +
                     calm_hours(10, 0.2, T0 + 61 * H))
