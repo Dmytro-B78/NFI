@@ -42,3 +42,9 @@ scripts/risk_digest_state.json
 scripts/risk_digest_state.json.tmp
 scripts/risk_digest_log.csv
 scripts/risk_digest.log
+
+# blacklist_scout runtime files (server-local)
+scripts/blacklist_scout_state.json
+scripts/blacklist_scout_state.json.tmp
+scripts/blacklist_scout_log.csv
+scripts/blacklist_scout.log
