@@ -1,10 +1,10 @@
-"""Tests for blacklist_scout.py. Run: python scripts/test_blacklist_scout.py (or pytest)."""
+"""Tests for scout_detect.py (detectors). Run: python scripts/test_blacklist_scout.py (or pytest)."""
 import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import blacklist_scout as bs  # noqa: E402
+import scout_detect as bs  # noqa: E402
 
 CFG = json.load(open(Path(__file__).parent / "blacklist_scout_config.json", encoding="utf-8"))
 H = 3600 * 1000
@@ -185,67 +185,6 @@ def test_scan_asof_skips_exchange_and_author():
     found = bs.scan(CFG, info, TICKERS, fake_klines, {"blacklist": [], "whitelist": [], "open": {}},
                     bs.parse_author_blacklist(AUTHOR_TEXT), T0, T0 + 200 * D, {"NXPC"})
     assert found == []  # calm candles; delist/author are not used in replay
-
-
-def test_decide_new_repeat_newreason_renotify_drop():
-    c = {"pair": "DOS/USDT:USDT", "base": "DOS", "where": "", "price": 0.2, "qvol_m": 196.0,
-         "off_high_txt": "-73%", "vs_first_txt": "н/д", "age_txt": "70 д",
-         "reasons": [("hour_spike", "час: 486%")]}
-    msg, st, rows = bs.decide(CFG, [c], {}, "t1", 1000.0)
-    assert msg and "кандидатов в блэклист 1" in msg and '"(DOS)/.*"' in msg and len(rows) == 1
-    msg2, st2, _ = bs.decide(CFG, [c], st, "t2", 2000.0)
-    assert msg2 is None and st2[c["pair"]]["notified"] == 1000.0
-    c3 = dict(c, reasons=c["reasons"] + [("author", "в блэклисте автора")])
-    msg3, st3, _ = bs.decide(CFG, [c3], st2, "t3", 3000.0)
-    assert msg3 is not None and st3[c["pair"]]["notified"] == 3000.0
-    later = 3000.0 + CFG["renotify_hours"] * 3600
-    assert bs.decide(CFG, [c3], st3, "t4", later)[0] is not None
-    assert bs.decide(CFG, [], st3, "t5", 4000.0) == (None, {}, [])  # gone -> forgotten
-
-
-def test_message_clipped():
-    c = {"pair": "X/USDT:USDT", "base": "X", "where": "", "price": 1.0, "qvol_m": 1.0,
-         "off_high_txt": "-1%", "vs_first_txt": "-1%", "age_txt": "1 д", "reasons": [("bleed", "z" * 9000)]}
-    assert len(bs.decide(CFG, [c], {}, "t", 1.0)[0]) == CFG["message_max_len"]
-
-
-def test_fetch_bot_against_mock_api():
-    import threading
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-
-    seen = {"paths": []}
-
-    class Hd(BaseHTTPRequestHandler):
-        def log_message(self, *a):
-            pass
-
-        def _send(self, obj):
-            body = json.dumps(obj).encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(body)
-
-        def do_POST(self):
-            seen["post"] = self.path
-            self._send({"access_token": "tok"})
-
-        def do_GET(self):
-            seen["paths"].append(self.path)
-            data = {"/api/v1/blacklist": {"blacklist_expanded": ["OLD/USDT:USDT"]},
-                    "/api/v1/whitelist": {"whitelist": ["DOS/USDT:USDT"]},
-                    "/api/v1/status": [{"pair": "NXPC/USDT:USDT", "trade_id": 190}]}
-            self._send(data[self.path])
-
-    srv = HTTPServer(("127.0.0.1", 0), Hd)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    api = {"listen_ip_address": "0.0.0.0", "listen_port": srv.server_address[1], "username": "u", "password": "p"}
-    b = bs.fetch_bot(api, 5)
-    srv.shutdown()
-    assert b == {"blacklist": ["OLD/USDT:USDT"], "whitelist": ["DOS/USDT:USDT"],
-                 "open": {"NXPC/USDT:USDT": 190}}
-    assert seen["post"] == "/api/v1/token/login"  # the only POST is the login
-    assert sorted(seen["paths"]) == ["/api/v1/blacklist", "/api/v1/status", "/api/v1/whitelist"]
 
 
 if __name__ == "__main__":
