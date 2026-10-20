@@ -16,6 +16,52 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-10-20
+**Код (наш):** v17.5.172, commit `c169eb8` (задеплоено 20.10.2026 00:09 CEST)
+**Код (апстрим):** iterativv X7-файл на мёрже `f4b162f` (19.10.2026, корень репо) + наши 2 патча (protections StoplossGuard + MaxDrawdown, 661_enable), diff 18 строк; sha256 боевого файла `45fec93c...`
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары, эффективно меньше -- часть пар в блэклисте)
+**Блэклист:** commit `4bdbe30` (19.10.2026, 51 запись)
+**max_open_trades:** 6 (как в бою с 16.10.2026, флаг `--max-open-trades 6`)
+**Protections:** `--enable-protections` (как в бою; у X7 за окно 0 локов)
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Два варианта ставки (кандидат обязан гнаться в обоих):**
+- **(A) unlimited** (как в бою): `--config user_data/backtest-wallet1000.json`, stake из `exampleconfig.json` (unlimited, tradable_balance_ratio 0.99). Лог `backtest_v17572_slots6_anchor_full.log`, zip `backtest-result-2026-10-20_05-23-22`. Total profit / Calmar здесь раздуты компаундингом -- для A/B не решающие.
+- **(B) fixed150**: `--config user_data/backtest-wallet1000.json --config user_data/backtest-fixed-stake.json` (150 x 6 = 900 из 1000, та же пропорция, что 8 x 112.5 у записи ниже). Лог `backtest_v17572_slots6_fixed150_full.log`, zip `backtest-result-2026-10-20_06-23-22`. **Решающий для прибыли.**
+
+**Причина новой записи:** смена code-baseline (v17.5.172 задеплоена 20.10 без A/B)
+и смена боевых слотов 8 -> 6 (16.10). Снята для A/B X8 (20.10.2026, отклонён --
+см. SYSTEM_KNOWLEDGE.md, секция X8 A/B). Zero-loss: Sortino/Calmar/PF по закрытым
+сделкам -- sentinel (-100.00 / -100.00 / 0.00), не использовать; сравнивать по
+wallet Sharpe/Sortino/Calmar, SQN, Sharpe (closed), underwater (balance).
+
+| Метрика | (A) unlimited | (B) fixed150 |
+|---|---|---|
+| Trades | 326 | 328 |
+| Absolute profit | 23671.46 USDT (2367.15%) | 3118.226 USDT (311.82%) |
+| CAGR | 690.30% | 149.12% |
+| Sharpe (closed trades) | 8.20 | 9.76 |
+| Sortino / Calmar (closed) | sentinel | sentinel |
+| SQN | 13.44 | 15.94 |
+| Profit factor | sentinel (0 убытков) | sentinel (0 убытков) |
+| Expectancy (Ratio) | 72.61 (100.00) | 9.51 (100.00) |
+| Max % underwater (closed) | 0.00% | 0.00% |
+| Max % underwater (wallet balance) | 12.59% | 4.11% |
+| Absolute drawdown (wallet) | 2045.859 USDT (12.59%) | 111.331 USDT (3.01%) |
+| Sharpe (daily wallet) | 4.13 | 3.94 |
+| Sortino (daily wallet) | 5.73 | 8.16 |
+| Calmar (daily wallet) | 637.29 | 349.92 |
+| Long / Short trades | 280 / 46 | 282 / 46 |
+| Long / Short profit USDT | 21943.713 / 1727.747 | 2930.807 / 187.419 |
+| Best trade | ONDO +85.11% | ONDO +85.11% |
+| Worst trade | NEAR +0.16% (0 убыточных) | ONDO +0.05% (0 убыточных) |
+| Best day / Worst day | 1756.076 / 0 USDT | 450.888 / 0 USDT |
+| Days win/draw/lose | 140 / 413 / 0 | 143 / 410 / 0 |
+
+---
+
+## SUPERSEDED
+
+**Заменён 20.10.2026 -- code-baseline v17.5.172 (`c169eb8`) и max_open_trades 8 -> 6, см. ACTIVE выше.**
 **Дата фиксации:** 2026-10-10 (вторая запись этого дня, после деплоя v17.5.159)
 **Код (наш):** v17.5.159, commit `f1a1547` (задеплоено 10.10.2026 12:58)
 **Код (апстрим):** iterativv X7-файл на `cf971e88` (09.10.2026) + наши 2 патча (protections, 661_enable), diff 19 строк
