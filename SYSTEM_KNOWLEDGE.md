@@ -1,7 +1,24 @@
 # ================================================================
 # Freqtrade Futures Bot -- SYSTEM KNOWLEDGE BASE
 # Strategy: NostalgiaForInfinityX7
-# Audit date: 2026-10-20 (rev. 57)
+# Audit date: 2026-10-23 (rev. 58)
+# rev. 58 (23.10.2026, ИЗМЕНЕНИЕ В БОЕВОЙ СИСТЕМЕ: стратегия + блэклист):
+#   **Апстрим v17.5.172 -> v17.5.178** (X7-файл на апстрим-коммите
+#   `74c4f37`, окно `f4b162f..74c4f37`) + наши 2 патча, commit `55f8a79`,
+#   sha256 `3b0c4e7b...`, дифф против прежнего боевого 54 ins / 19 del,
+#   py_compile + import OK, задеплоено на сервер 23.10. Состав: `0cb516f`
+#   audit fixes (ревью Opus 20.10): знак в `short_grind_entry_v3`
+#   g15/g18/g19/g21 исправлен -- шорт-грайнды восстановления теперь
+#   срабатывают на реальном неблагоприятном движении (**риск ВВЕРХ по
+#   шортам**, потолок не менялся); переименован тег guard u_e (инертно,
+#   `u_e_stops_enable=False`); guard `num_empty_288` у лонга #120. Плюс 14
+#   коммитов "signal N: add protection" (1, 4, 5, 6, 41 x2, 43, 44, 61, 63,
+#   64, 101, 102, 502) -- по одному AND-условию, без ослаблений, 562 не
+#   тронут. A/B не делался. **Блэклист +BTW** (`09ecb7b`, upstream
+#   `b432519`, 22.10): перп-распродажа после пампа (75x до 2.7536 14.10,
+#   -47.2% за 8 сессий), класс APR/VELVET/JCT; открытой позиции нет;
+#   51 -> 52 записи, BTW отфильтрован из whitelist. Наблюдать:
+#   шорт-грайнды g15/g18/g19/g21.
 # rev. 57 (20.10.2026, без изменений в боевой системе, Opus/Sonnet):
 #   **A/B X8 против X7 -- ОТКЛОНЁН.** Новый ACTIVE anchor в ANCHOR_LOG
 #   (запись #11): X7 v17.5.172 (`c169eb8`), 6 слотов, `--enable-protections`,
@@ -623,7 +640,7 @@ universal-файла (SYSTEM_KNOWLEDGE.md > PROJECT_INSTRUCTIONS.md):
 | Server         | 62.84.182.36, /home/ubuntu/NFI (Ubuntu), пользователь root        |
 | GitHub repo    | https://github.com/Dmytro-B78/NFI (public, без секретов)         |
 | Exchange       | Binance Futures (isolated margin)                                |
-| Strategy       | NostalgiaForInfinityX7 **v17.5.172** (с 20.10.2026; X7-файл = апстрим-мёрж `f4b162f` от 19.10.2026 + наши 2 патча, sha256 `45fec93c...`; A/B пропущен решением пользователя, см. UPSTREAM v17.5.160 -> v17.5.172 & VNTREVX REBUY/DE-RISK FIXES). С 12.10 по 20.10.2026 -- v17.5.160 (commit `e1bd405`, X7-файл на `d29400f0`; A/B идентичен v17.5.159). С 10.10 по 12.10.2026 -- v17.5.159 (commit `f1a1547`, X7-файл на `cf971e88`) + наши 2 патча (class-level `protections` -- с 16.10.2026 только StoplossGuard + MaxDrawdown, commit `b7aa9bc`; `short_entry_condition_661_enable: True`), diff против апстрима = 18 строк (до 16.10 -- 19, с CooldownPeriod). До 10.10.2026 -- v17.5.7 (с 02.09.2026). A/B к обновлению был отрицательным, деплой -- решение пользователя, см. BLACKLIST SWAP & UPSTREAM v17.5.7 -> v17.5.159 |
+| Strategy       | NostalgiaForInfinityX7 **v17.5.178** (с 23.10.2026; X7-файл на апстрим-коммите `74c4f37` + наши 2 патча, commit `55f8a79`, sha256 `3b0c4e7b...`, см. rev. 58). Ранее **v17.5.172** (с 20.10.2026; X7-файл = апстрим-мёрж `f4b162f` от 19.10.2026 + наши 2 патча, sha256 `45fec93c...`; A/B пропущен решением пользователя, см. UPSTREAM v17.5.160 -> v17.5.172 & VNTREVX REBUY/DE-RISK FIXES). С 12.10 по 20.10.2026 -- v17.5.160 (commit `e1bd405`, X7-файл на `d29400f0`; A/B идентичен v17.5.159). С 10.10 по 12.10.2026 -- v17.5.159 (commit `f1a1547`, X7-файл на `cf971e88`) + наши 2 патча (class-level `protections` -- с 16.10.2026 только StoplossGuard + MaxDrawdown, commit `b7aa9bc`; `short_entry_condition_661_enable: True`), diff против апстрима = 18 строк (до 16.10 -- 19, с CooldownPeriod). До 10.10.2026 -- v17.5.7 (с 02.09.2026). A/B к обновлению был отрицательным, деплой -- решение пользователя, см. BLACKLIST SWAP & UPSTREAM v17.5.7 -> v17.5.159 |
 | Mode           | LIVE (реальные деньги, с ~13.07.2026)                             |
 | Python         | 3.12.10 (venv локально: `.venv\`; на сервере: `.venv/`) / локально freqtrade venv 3.13.1 (см. ниже) |
 | Freqtrade      | 2026.5.1 (локально и на сервере)                                  |
@@ -636,7 +653,7 @@ universal-файла (SYSTEM_KNOWLEDGE.md > PROJECT_INSTRUCTIONS.md):
 | systemd unit   | /etc/systemd/system/freqtrade-nfi.service, enabled. `ExecStart` с 29.09.2026 указывает на `scripts/run_freqtrade_pooled.py trade ...` вместо прямого `python -m freqtrade trade ...` (см. QUEUEPOOL CRASH & FIAT_CONVERT INCIDENT) |
 | Реальный баланс пользователя | ~2000 USDT (на 01.09.2026, со слов пользователя) -- dry_run_wallet в exampleconfig.json обновлён 1000->2000 (22.09.2026, локально, НЕ закоммичено) под этот баланс; пересчёт stake_amount/max_open_trades под факт баланс по-прежнему не делался (см. PENDING) |
 | Размер боевого пейрлиста | 80 пар (VolumePairList top-80 после фильтров, входной пул top-100) -- откачено с top-120 27.07.2026 (commit `ca10153`), см. PAIRLIST SIZE EXPANSION EXPERIMENT |
-| Блэклист | С 10.10.2026 (commit `b38178c`) -- авторский блэклист iterativv (живой `configs/blacklist-binance.json` на 10.10.2026, комментарии убраны) + наши доп. блоки: PUMP, AVA, SCR, TOWNS, `(1000.*)`, `(ID\|ORDI)`, XAU, XAG, WDC, CBRS, DRAM, NVDA, MSTR, MSFT, SOXL, COIN, CRCL. 45 записей на 10.10. Категориальные блоки автора (Mem/FUN, Low cap) приняты решением пользователя -- прежняя политика "только реактивно" больше не действует для авторского списка. Дальше -- синхронизация с авторскими добавлениями по событиям: BLUR/BLAST/DOS (`5945107`, 16.10), STBL/NXPC (`e21522c`, 18.10), CYS (`4bdbe30`, 19.10) -- **51 запись**; добавления без перпа на Binance (IMO, AEON, QUBIC) пропускаются как no-op, см. BLACKLIST UPSTREAM SYNC |
+| Блэклист | С 10.10.2026 (commit `b38178c`) -- авторский блэклист iterativv (живой `configs/blacklist-binance.json` на 10.10.2026, комментарии убраны) + наши доп. блоки: PUMP, AVA, SCR, TOWNS, `(1000.*)`, `(ID\|ORDI)`, XAU, XAG, WDC, CBRS, DRAM, NVDA, MSTR, MSFT, SOXL, COIN, CRCL. 45 записей на 10.10. Категориальные блоки автора (Mem/FUN, Low cap) приняты решением пользователя -- прежняя политика "только реактивно" больше не действует для авторского списка. Дальше -- синхронизация с авторскими добавлениями по событиям: BLUR/BLAST/DOS (`5945107`, 16.10), STBL/NXPC (`e21522c`, 18.10), CYS (`4bdbe30`, 19.10) -- **52 записи (с 22.10 +BTW, `09ecb7b`)**; добавления без перпа на Binance (IMO, AEON, QUBIC) пропускаются как no-op, см. BLACKLIST UPSTREAM SYNC |
 | **Активное расследование** | **Гипотеза 5 (derisk_level_3, НОВАЯ, 24.07.2026): реальная сделка VELVET #25 (tag "61", подтверждено SQL) прошла derisk_level_3 в 02:16:14 -- продажа 1127/1138 монет по 0.262, за 19 минут до локального разворота цены вверх (+22%). Возможный паттерн "продажа у дна". Проверка на ERA #24 через `orders WHERE ft_trade_id=24` -- только 2 buy-ордера, derisk_level_3 не срабатывал, сравнение не получено. Требуется третий случай или ожидание срабатывания на живых позициях. Диф v434 НЕ затрагивает derisk_level_3 -- гипотеза 5 остаётся открытой ПОСЛЕ деплоя v434. Гипотезы 4/4b (апстрим-разрывы v413->v433->v434) ЗАКРЫТЫ, обе задеплоены с честным A/B системным улучшением. См. CATASTROPHIC DRAWDOWN INVESTIGATION.** |
 | **Живой риск на момент аудита** | **20.10.2026: по API открыта одна позиция -- NXPC #190** (long, 3x, tag `4` -> grind_v3, 4 входа, amount 674, stake 42.47, -54.25% по `/api/v1/status` сразу после деплоя v17.5.172; открыта 16.10 01:35, до блока NXPC -- блэклист открытую сделку не закрывает, стратегия ведёт её дальше: выходы, grind-доборы, де-риск). US #144 и ALICE #149 закрыты вручную (11.10 и до 16.10). Позиции июля-августа (NIGHT/ERA/VELVET/ACE/SOON) -- история, все закрыты. |
 | ANCHOR_LOG.md | `C:\TradingBots\NFI\ANCHOR_LOG.md` (в git). ACTIVE (20.10.2026, запись #11): **код v17.5.172** (`c169eb8`), блэклист `4bdbe30`, снимок `pairlist-static-backtest-derisk4-v1757.json`, timerange 20250103-20260724, `--max-open-trades 6 --enable-protections`, оверлей `backtest-wallet1000.json`; два варианта ставки: **(A) unlimited** (из exampleconfig, как в бою) -- 326 trades / 23671.46 USDT; **(B) fixed150** (+ `backtest-fixed-stake.json`, решающий для прибыли) -- 328 trades / 3118.226 USDT. Zero-loss: Sortino/Calmar/PF по закрытым -- sentinel. Кандидат гонится в обоих вариантах. Предыдущая ACTIVE #10 (v17.5.159, 8 слотов, max8-stake112) -- SUPERSEDED. См. секцию ANCHOR LOG. |
@@ -4772,6 +4789,11 @@ anchor/candidate обоих A/B сессии 24.07.2026). Вопросов по 
 
 ## PENDING
 
+- **Шорт-грайнды g15/g18/g19/g21 (с 23.10.2026, v17.5.178, фикс `0cb516f`):**
+  знак исправлен, грайнды восстановления по шортам срабатывают чаще --
+  риск вверх по шортам (потолок не менялся). Смотреть открытые шорты и
+  расход кошелька. ACTIVE anchor #11 (v17.5.172) с боевой v17.5.178 не
+  совпадает; A/B не делался.
 - **Наблюдение за rebuy после фикса vntrevx A** (с 20.10.2026): rebuy-теги
   (61-65/68, 561-563) доливаются при x1 свободной маржи вместо x3. Смотреть
   `Rebuy (r)` / `Rebuy De-risk` в журнале и расход кошелька при полных
@@ -5069,6 +5091,8 @@ anchor/candidate обоих A/B сессии 24.07.2026). Вопросов по 
 | 2026-10-20 | UPDATE | `scripts/blacklist_scout.py` (v1 `9844667` -> v2 `fa80184` -> v3 `64f4048`): поиск кандидатов в блэклист по данным Binance, уровни временный/постоянный/сообщение, сводка, `persist_blacklist.ps1`. Replay: NXPC пойман с 19:00 UTC 15.10 (v1 пропускал -- правило итога сделано относительным), DOS пойман. Запущен в теневом режиме (cron каждый час), бот не тронут (runtime 51 = файл). Копия SYSTEM_KNOWLEDGE в репо синхронизирована (`0b74c2c`). Коммит обновления стратегии v17.5.172 -- `c169eb8`. |
 
 | 2026-10-20 | UPDATE | A/B X8 v18.0.143 против X7 v17.5.172 (6 слотов, protections, `derisk4-v1757`, 20250103-20260724). Новый ACTIVE anchor #11 (X7 v17.5.172, unlimited 326 / 23671.46 и fixed150 328 / 3118.226). X8 + наши патчи: 4 убытка (-3353) через `exit_bad_trade_abandon`, почти всё -- шорт 661. X8 без 661: unlimited 52153, fixed150 3795 (+22% к X7), но Sharpe/Calmar/SQN/просадка хуже, 2 из 9 метрик -- отклонён. X7 остаётся. Кандидаты: `strategies_x8_test`, `strategies_x8_no661_test`. |
+
+| 2026-10-23 | UPDATE | Апстрим v17.5.172 -> v17.5.178 (`74c4f37`) + наши 2 патча, commit `55f8a79`, sha256 `3b0c4e7b...`, 54/19, py_compile + import OK, задеплоено. `0cb516f`: фикс знака short_grind_entry_v3 g15/g18/g19/g21 (риск вверх по шортам), 14 x "add protection". Блэклист +BTW (`09ecb7b`), 52 записи. A/B не делался. |
 
 ---
 *End of SYSTEM_KNOWLEDGE.md*
