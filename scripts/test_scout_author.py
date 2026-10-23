@@ -123,6 +123,25 @@ def test_author_failure_uses_cache_and_alerts_once():
         assert any("shrank" in c[1] for c in calls if c[0] == "telegram")
 
 
+def test_persisted_pair_is_forgotten_not_reblocked():
+    """Regression (server dry-run 23.10): a pair now in the file must not come back as a new block each run."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _, cfg = run_once(tmp, dry=False, shadow=True, author=AUTHOR)
+        state = json.loads(Path(cfg["state_file"]).read_text(encoding="utf-8"))
+        assert "NXPC/USDT:USDT" in state["perm"]
+        for sync in (False, True):  # the file now holds NXPC; the bot loaded it, so it is in "expanded"
+            calls, _ = run_once(tmp, dry=False, state=state, shadow=True, sync=sync, author=AUTHOR,
+                                files=("(OLD)/.*", "(NXPC)/.*"), expanded={"NXPC/USDT:USDT"})
+            assert [c for c in calls if c[0] in ("add", "remove")] == []
+            text = [c[1] for c in calls if c[0] == "telegram"][0]
+            assert "Закреплено в файле, скрипт больше не ведёт: NXPC/USDT:USDT" in text
+            assert "Постоянный блок" not in text
+        calls, _ = run_once(tmp, dry=False, shadow=True, author=AUTHOR,   # state saved by the last run: quiet now
+                            state=json.loads(Path(cfg["state_file"]).read_text(encoding="utf-8")),
+                            files=("(OLD)/.*", "(NXPC)/.*"), expanded={"NXPC/USDT:USDT"})
+        assert [c for c in calls if "Закреплено" in c[1] or "Постоянный" in c[1]] == []
+
+
 def test_lock():
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "x.lock")

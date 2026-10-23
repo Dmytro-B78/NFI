@@ -193,6 +193,7 @@ def run(args, cfg, private):
 
     now_s = time.time()
     ts = st.stamp(now_s, "%Y-%m-%d %H:%M")
+    blocked = live["expanded"] - {p for p in ours if not file_blocked(p)}  # persisted ones count as blocked
     shadow, texts, extra = cfg["shadow_mode"], [], {}
     author, author_err = [], None
     if cfg["author_blacklist_url"]:  # optional; empty string disables the author sync
@@ -202,12 +203,12 @@ def run(args, cfg, private):
         if author_err and due:
             texts.append(cfg["author_error_template"].format(ts=ts, error=author_err)[:500])
     pairs = [p for p, _, _ in sa.perps(info, cfg["quote"])]
-    a_cands = sa.candidates(cfg, author, info, tickers, live["expanded"] - ours, live["whitelist"],
+    a_cands = sa.candidates(cfg, author, info, tickers, blocked, live["whitelist"],
                             live["open"], int(now_s * 1000)) if author else []
     if args.sync:
         found = a_cands
     else:
-        scan_bot = {"blacklist": live["expanded"] - ours, "whitelist": live["whitelist"], "open": live["open"]}
+        scan_bot = {"blacklist": blocked, "whitelist": live["whitelist"], "open": live["open"]}
         found = sa.merge(sd.scan(cfg, info, tickers, binance_klines(cfg), scan_bot, [], int(now_s * 1000)), a_cands)
     new_state, actions, ev = st.plan(cfg, found, state, file_blocked, live["runtime"], now_s)
     actions = st.live_filter(cfg, new_state, actions, ev, shadow)

@@ -161,7 +161,8 @@ def test_bot_api_against_mock():
     assert {x[3] for x in seen if x[0] == "GET"} == {"Bearer tok"}
 
 
-def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False, sync=False, author=None, files=("(OLD)/.*",)):
+def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False, sync=False, author=None, files=("(OLD)/.*",),
+             expanded=frozenset()):
     """run() with Binance, GitHub, the bot and Telegram replaced by fakes. author: list text, or an exception to raise."""
     calls = []
     sys.path.insert(0, str(Path(__file__).parent))
@@ -172,7 +173,7 @@ def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False, sync=False
             pass
 
         def state(self):
-            return {"runtime": set(runtime), "expanded": {"OLD/USDT:USDT"} | set(runtime),
+            return {"runtime": set(runtime), "expanded": {"OLD/USDT:USDT"} | set(runtime) | set(expanded),
                     "whitelist": ["DOS/USDT:USDT"], "open": {}}
 
         def add(self, pairs):
