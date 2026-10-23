@@ -15,12 +15,18 @@ Every run (cron, hourly):
      user_data/blacklist-binance.json locally with scripts/persist_blacklist.ps1;
   4. sends Telegram only when something changed, plus a daily summary of all
      temporary and permanent blocks. Any error is sent to Telegram too.
-With "shadow_mode": true in the config nothing is sent to the bot: the scout
-keeps the same state, log and messages as if it had blocked (marked as
-shadow), so its accuracy can be checked before it is allowed to act.
+With "shadow_mode": true in the config the DETECTOR blocks are not sent to
+the bot: the scout keeps the same state, log and messages as if it had
+blocked (such items are tagged in the messages), so its accuracy can be checked before it is
+allowed to act. The author's blacklist is governed separately by
+"author_sync_live": new author entries are blocked in the bot as soon as they
+appear, until they are persisted into the file (see scout_author.py).
 
 Usage:
     python scripts/blacklist_scout.py [--dry-run]
+    python scripts/blacklist_scout.py --sync
+      light run (cron, every few minutes): author list + put blocks back
+      after a bot restart; no candles, no detectors, no daily summary.
     python scripts/blacklist_scout.py --asof 2026-10-15T23:00 --pairs NXPC,DOS
       replay as of a past UTC time: only candles closed before it, price
       detectors only, no bot API, no state, no Telegram (print only).
@@ -44,6 +50,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 from risk_digest import (apply_env_overrides, http_json, load_env_file,  # noqa: E402
                          load_json, save_state, send_telegram)
+import scout_author as sa  # noqa: E402
 import scout_detect as sd  # noqa: E402
 import scout_tiers as st  # noqa: E402
 
@@ -131,6 +138,34 @@ def append_log(path, rows):
         w.writerows(rows)
 
 
+def acquire_lock(path, stale_s, wait_s):
+    """Portable lock file: full and light runs must not write the state at once."""
+    deadline = time.time() + wait_s
+    while True:
+        try:
+            os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            return True
+        except FileExistsError:
+            if time.time() - os.path.getmtime(path) > stale_s:
+                os.remove(path)  # left by a crashed run
+                continue
+            if time.time() >= deadline:
+                return False
+            time.sleep(2)
+
+
+def load_author(cfg, state):
+    """(entries, error): the live list, or the last good copy if it can't be fetched/parsed/trusted."""
+    cache = [tuple(x) for x in state.get("author_cache", [])]
+    try:
+        entries = sd.parse_author_blacklist(get_text(cfg, cfg["author_blacklist_url"]))
+        if not sa.accept(cache, entries, cfg["author_min_keep_ratio"]):
+            raise ValueError("list shrank: %d -> %d entries" % (len(cache), len(entries)))
+        return entries, None
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return cache, repr(e)
+
+
 def replay(cfg, args, info, tickers):
     asof = datetime.strptime(args.asof, "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
     asof_ms = int(asof.timestamp() * 1000)
@@ -151,8 +186,6 @@ def run(args, cfg, private):
     state_path = HERE / cfg["state_file"]
     state = load_json(state_path, default={})
     ours = set(state.get("temp", {})) | set(state.get("perm", {}))
-    url = cfg["author_blacklist_url"]  # optional cross-check; empty string disables it
-    author = sd.parse_author_blacklist(get_text(cfg, url)) if url else []
     patterns = file_patterns(cfg)
 
     def file_blocked(pair):
@@ -160,30 +193,56 @@ def run(args, cfg, private):
 
     now_s = time.time()
     ts = st.stamp(now_s, "%Y-%m-%d %H:%M")
-    scan_bot = {"blacklist": live["expanded"] - ours, "whitelist": live["whitelist"], "open": live["open"]}
-    found = sd.scan(cfg, info, tickers, binance_klines(cfg), scan_bot, author, int(now_s * 1000))
-    shadow = cfg["shadow_mode"]
-    runtime = live["runtime"] | ours if shadow else live["runtime"]  # shadow: pretend our blocks are applied
-    new_state, actions, ev = st.plan(cfg, found, state, file_blocked, runtime, now_s)
-    message = st.format_events(cfg, ev, new_state, ts, shadow)
-    digest = None
-    if st.digest_due(cfg, new_state, now_s):
-        digest = st.format_digest(cfg, new_state, len(patterns), ts, live["whitelist"], shadow)
+    shadow, texts, extra = cfg["shadow_mode"], [], {}
+    author, author_err = [], None
+    if cfg["author_blacklist_url"]:  # optional; empty string disables the author sync
+        author, author_err = load_author(cfg, state)
+        due = now_s - state.get("author_err", 0) >= cfg["author_error_renotify_hours"] * 3600
+        extra["author_err"] = 0 if not author_err else (now_s if due else state["author_err"])
+        if author_err and due:
+            texts.append(cfg["author_error_template"].format(ts=ts, error=author_err)[:500])
+    pairs = [p for p, _, _ in sa.perps(info, cfg["quote"])]
+    a_cands = sa.candidates(cfg, author, info, tickers, live["expanded"] - ours, live["whitelist"],
+                            live["open"], int(now_s * 1000)) if author else []
+    if args.sync:
+        found = a_cands
+    else:
+        scan_bot = {"blacklist": live["expanded"] - ours, "whitelist": live["whitelist"], "open": live["open"]}
+        found = sa.merge(sd.scan(cfg, info, tickers, binance_klines(cfg), scan_bot, [], int(now_s * 1000)), a_cands)
+    new_state, actions, ev = st.plan(cfg, found, state, file_blocked, live["runtime"], now_s)
+    actions = st.live_filter(cfg, new_state, actions, ev, shadow)
+    if args.sync:  # no detector pass: keep what the full run knows about notified pairs
+        new_state["notify"] = dict(state.get("notify", {}), **new_state["notify"])
+    if author and not author_err:
+        added, removed = sa.diff([tuple(x) for x in state.get("author_cache", [])], author)
+        ev["author_noop"] = [p for p, _ in added if not sa.matching(p, pairs)]
+        ev["author_removed"] = [p for p, _ in removed if any(file_blocked(x) for x in sa.matching(p, pairs))]
+        extra["author_cache"] = [list(x) for x in author]
+        extra["author_changed"] = now_s if added or removed else state.get("author_changed", 0)
+        extra["author_info"] = {"entries": len(author), "changed": extra["author_changed"],
+                                "noperp": sum(1 for p, _ in author if not sa.matching(p, pairs))}
+    else:
+        for k in ("author_cache", "author_changed", "author_info"):
+            if k in state:
+                extra[k] = state[k]
+    new_state.update(extra)
+    live_fn = lambda keys: st.is_live(cfg, keys, shadow)  # noqa: E731
+    message = st.format_events(cfg, ev, new_state, ts, live=live_fn)
+    if message:
+        texts.insert(0, message)
+    if not args.sync and st.digest_due(cfg, new_state, now_s):
+        texts.append(st.format_digest(cfg, new_state, len(patterns), ts, live["whitelist"], live=live_fn))
         new_state["digest"] = now_s
-    print(message or "no changes (%d candidates seen)" % len(found))
-    print("%s API: add %s, remove %s" % ("shadow, NOT applied" if shadow else "planned",
-                                        actions["add"] or "-", actions["remove"] or "-"))
-    if digest:
-        print(digest)
+    print("\n".join(texts) or "no changes (%d candidates seen)" % len(found))
+    print("API: add %s, remove %s" % (actions["add"] or "-", actions["remove"] or "-"))
     if args.dry_run:
         return
-    if actions["add"] and not shadow:
+    if actions["add"]:
         bot.add(actions["add"])
-    if actions["remove"] and not shadow:
+    if actions["remove"]:
         bot.remove(actions["remove"])
-    for text in (message, digest):  # before saving state: a failed send repeats next run
-        if text:
-            send_telegram(cfg, private["telegram"], text)
+    for text in texts:  # before saving state: a failed send repeats next run
+        send_telegram(cfg, private["telegram"], text)
     save_state(state_path, new_state)
     rows = st.log_rows(ev, ts)
     if rows:
@@ -193,6 +252,7 @@ def run(args, cfg, private):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="print only: no API changes, no send, no state, no log")
+    ap.add_argument("--sync", action="store_true", help="light run: author list and restore blocks, no detectors")
     ap.add_argument("--asof", help="replay as of UTC time YYYY-MM-DDTHH:MM (print only)")
     ap.add_argument("--pairs", default="", help="with --asof: base assets, e.g. NXPC,DOS")
     args = ap.parse_args()
@@ -202,6 +262,10 @@ def main():
     env = dict(load_env_file(HERE / cfg["env_file"]))
     env.update(os.environ)
     private = apply_env_overrides(load_json(HERE / cfg["private_config"]), env)
+    locked = not (args.dry_run or args.asof)
+    if locked and not acquire_lock(HERE / cfg["lock_file"], cfg["lock_stale_sec"], 0 if args.sync else cfg["lock_wait_sec"]):
+        print("another scout run holds the lock: skipped" if args.sync else "lock busy: run skipped")
+        sys.exit(0 if args.sync else 1)
     try:
         run(args, cfg, private)
     except Exception as e:  # fail loudly: print and tell Telegram
@@ -210,6 +274,9 @@ def main():
             ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
             send_telegram(cfg, private["telegram"], cfg["error_template"].format(ts=ts, error=repr(e))[:500])
         sys.exit(1)
+    finally:
+        if locked:
+            os.remove(HERE / cfg["lock_file"])
 
 
 if __name__ == "__main__":

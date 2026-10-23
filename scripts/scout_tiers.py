@@ -20,7 +20,9 @@ blocks would cut.
 
 from datetime import datetime, timezone
 
-EVENT_KEYS = ("new_perm", "new_temp", "skipped", "notify", "released", "persisted", "restored")
+EVENT_KEYS = ("new_perm", "new_temp", "skipped", "notify", "released", "persisted", "restored",
+              "author_noop", "author_removed")
+LIST_EVENTS = ("released", "persisted", "restored", "author_noop", "author_removed")
 
 
 def stamp(ts_s, fmt="%m-%d %H:%M"):
@@ -56,7 +58,7 @@ def plan(cfg, found, state, file_blocked, runtime, now_s):
             del book[p]
 
     ttl = cfg["temp_block_days"] * 86400
-    new_blocks, seen = 0, set()
+    new_blocks, author_new, seen = 0, 0, set()
     for c in found:
         p, tier = c["pair"], classify(cfg, c)
         rec = {"base": c["base"], "where": c["where"], "text": reason_text(c), "price": c.get("price", 0.0),
@@ -66,10 +68,13 @@ def plan(cfg, found, state, file_blocked, runtime, now_s):
             if n_prev + 1 >= cfg["escalation_count"]:
                 tier, rec["text"] = "perm", cfg["escalation_text"].format(n=n_prev + 1) + "; " + rec["text"]
         if tier in ("perm", "temp") and p not in perm and p not in temp:
-            if new_blocks >= cfg["max_new_blocks_per_run"]:
+            is_author = "author" in rec["keys"]
+            used, cap = ((author_new, cfg["author_max_new_per_run"]) if is_author
+                         else (new_blocks, cfg["max_new_blocks_per_run"]))
+            if used >= cap:
                 ev["skipped"].append(dict(rec, pair=p))
                 continue
-            new_blocks += 1
+            author_new, new_blocks = author_new + is_author, new_blocks + (not is_author)
         if tier == "perm":
             if p not in perm:
                 perm[p] = dict(rec, since=now_s)
@@ -105,6 +110,21 @@ def plan(cfg, found, state, file_blocked, runtime, now_s):
     return new_state, actions, ev
 
 
+def is_live(cfg, keys, shadow):
+    """Author blocks follow author_sync_live, everything else follows shadow_mode."""
+    return cfg["author_sync_live"] if "author" in keys else not shadow
+
+
+def live_filter(cfg, new_state, actions, ev, shadow):
+    """Keep only the planned adds that really go to the bot; shadow ones stay in state only."""
+    def live(p):
+        rec = new_state["perm"].get(p) or new_state["temp"].get(p) or {}
+        return is_live(cfg, rec.get("keys", []), shadow)
+    add = [p for p in actions["add"] if live(p)]
+    ev["restored"] = [p for p in ev["restored"] if p in add]
+    return {"add": add, "remove": actions["remove"]}
+
+
 def persist_line(cfg, perm):
     bases = " ".join(sorted({r["base"] for r in perm.values()}))
     return cfg["msg"]["persist"].format(cmd=cfg["persist_command_template"].format(bases=bases)) if bases else ""
@@ -114,8 +134,10 @@ def totals_line(cfg, st):
     return cfg["msg"]["totals"].format(temp=len(st["temp"]), perm=len(st["perm"]))
 
 
-def format_events(cfg, ev, st, ts, shadow=False):
+def format_events(cfg, ev, st, ts, shadow=False, live=None):
+    """live(keys) -> bool tags non-live items; without it shadow marks the whole message."""
     m, out = cfg["msg"], []
+    tag = (lambda e: "" if live is None or live(e["keys"]) else m["shadow_item"])
     sections = [("new_temp", "h_new_temp"), ("new_perm", "h_new_perm"), ("skipped", "h_skipped"),
                 ("notify", "h_notify")]
     for key, head in sections:
@@ -123,16 +145,18 @@ def format_events(cfg, ev, st, ts, shadow=False):
             out.append(m[head].format(n=cfg["max_new_blocks_per_run"]))
             for e in ev[key]:
                 tpl = m["item_temp"] if "until" in e else m["item"]
-                out.append(tpl.format(pair=e["pair"], where=e["where"], text=e["text"],
+                out.append(tpl.format(pair=e["pair"], where=e["where"] + tag(e), text=e["text"],
                                       until=stamp(e.get("until", 0))))
             if key == "new_perm":
                 out.append(persist_line(cfg, st["perm"]))
-    for key in ("released", "persisted", "restored"):
+    for key in LIST_EVENTS:
         if ev[key]:
             out.append(m["h_" + key].format(pairs=", ".join(ev[key])))
     if not out:
         return None
-    head = m["header"].format(ts=ts) + (m["shadow_mark"] if shadow else "")
+    head = m["header"].format(ts=ts) + (m["shadow_mark"] if shadow and live is None else "")
+    if live is not None and any(not live(e["keys"]) for key, _ in sections for e in ev[key]):
+        head += m["shadow_mark_part"]
     text = "\n".join([head] + out + ["", totals_line(cfg, st)])
     return text[:cfg["message_max_len"]]
 
@@ -142,18 +166,23 @@ def digest_due(cfg, st, now_s):
     return hour == cfg["digest_hour_utc"] and now_s - st.get("digest", 0) >= 20 * 3600
 
 
-def format_digest(cfg, st, file_entries, ts, whitelist, shadow=False):
+def format_digest(cfg, st, file_entries, ts, whitelist, shadow=False, live=None):
     m = cfg["msg"]
-    head = m["digest_header"].format(ts=ts) + (m["shadow_mark"] if shadow else "")
+    tag = (lambda r: "" if live is None or live(r["keys"]) else m["shadow_item"])
+    head = m["digest_header"].format(ts=ts) + (m["shadow_mark"] if shadow and live is None else "")
     cut = len((set(st["temp"]) | set(st["perm"])) & set(whitelist))
     out = [head, m["d_cut"].format(m=cut, w=len(whitelist)), m["d_temp"].format(n=len(st["temp"]))]
     for p, r in sorted(st["temp"].items(), key=lambda x: x[1]["until"]):
-        out.append(m["d_temp_item"].format(pair=p, until=stamp(r["until"]), text=r["text"]))
+        out.append(m["d_temp_item"].format(pair=p + tag(r), until=stamp(r["until"]), text=r["text"]))
     out.append(m["d_perm"].format(n=len(st["perm"])))
     for p, r in sorted(st["perm"].items()):
-        out.append(m["d_perm_item"].format(pair=p, since=stamp(r["since"], "%m-%d"), text=r["text"]))
+        out.append(m["d_perm_item"].format(pair=p + tag(r), since=stamp(r["since"], "%m-%d"), text=r["text"]))
     if st["perm"]:
         out.append(persist_line(cfg, st["perm"]))
+    info = st.get("author_info")
+    if info:
+        out.append(m["d_author"].format(n=info["entries"], noperp=info["noperp"],
+                                        changed=stamp(info["changed"], "%m-%d %H:%M") if info["changed"] else m["d_never"]))
     out.append(m["d_file"].format(n=file_entries))
     return "\n".join(out)[:cfg["message_max_len"]]
 
@@ -162,6 +191,6 @@ def log_rows(ev, ts):
     rows = []
     for key in ("new_temp", "new_perm", "skipped", "notify"):
         rows += [[ts, e["pair"], key, "%.8g" % e["price"], " ".join(e["keys"]), e["text"]] for e in ev[key]]
-    for key in ("released", "persisted", "restored"):
+    for key in LIST_EVENTS:
         rows += [[ts, p, key, "", "", ""] for p in ev[key]]
     return rows

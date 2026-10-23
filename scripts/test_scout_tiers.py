@@ -161,8 +161,8 @@ def test_bot_api_against_mock():
     assert {x[3] for x in seen if x[0] == "GET"} == {"Bearer tok"}
 
 
-def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False):
-    """run() with Binance, GitHub, the bot and Telegram replaced by fakes."""
+def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False, sync=False, author=None, files=("(OLD)/.*",)):
+    """run() with Binance, GitHub, the bot and Telegram replaced by fakes. author: list text, or an exception to raise."""
     calls = []
     sys.path.insert(0, str(Path(__file__).parent))
     import test_blacklist_scout as td
@@ -186,22 +186,29 @@ def run_once(tmp, dry, state=None, runtime=frozenset(), shadow=False):
             return td.INFO
         if url.endswith("/ticker/24hr"):
             return td.TICKERS
+        assert not sync, "light run must not fetch candles"
         q = dict(p.split("=") for p in url.split("?", 1)[1].split("&"))
         return td.fake_klines(q["symbol"], q["interval"], int(q["limit"]))
 
     bl = Path(tmp) / "bl.json"
-    bl.write_text(json.dumps({"exchange": {"pair_blacklist": ["(OLD)/.*"]}}), encoding="utf-8")
-    cfg = dict(CFG, request_pause_sec=0, author_blacklist_url="", blacklist_file=str(bl), shadow_mode=shadow,
+    bl.write_text(json.dumps({"exchange": {"pair_blacklist": list(files)}}), encoding="utf-8")
+    cfg = dict(CFG, request_pause_sec=0, author_blacklist_url="http://author" if author else "", blacklist_file=str(bl),
+               shadow_mode=shadow, retry_pause_sec=0,
                state_file=str(Path(tmp) / "state.json"), log_file=str(Path(tmp) / "log.csv"))
     if state is not None:
         Path(cfg["state_file"]).write_text(json.dumps(state), encoding="utf-8")
-    orig = (bs.Bot, bs.get_json, bs.send_telegram)
-    bs.Bot, bs.get_json = FakeBot, fake_get_json
+    def fake_get_text(cfg, url):
+        if isinstance(author, Exception):
+            raise author
+        return author
+
+    orig = (bs.Bot, bs.get_json, bs.send_telegram, bs.get_text)
+    bs.Bot, bs.get_json, bs.get_text = FakeBot, fake_get_json, fake_get_text
     bs.send_telegram = lambda c, tg, text: calls.append(("telegram", text))
     try:
-        bs.run(types.SimpleNamespace(dry_run=dry, asof=None, pairs=""), cfg, {"api_server": {}, "telegram": {}})
+        bs.run(types.SimpleNamespace(dry_run=dry, asof=None, pairs="", sync=sync), cfg, {"api_server": {}, "telegram": {}})
     finally:
-        bs.Bot, bs.get_json, bs.send_telegram = orig
+        bs.Bot, bs.get_json, bs.send_telegram, bs.get_text = orig
     return calls, cfg
 
 
@@ -224,7 +231,7 @@ def test_run_shadow_never_touches_bot():
     with tempfile.TemporaryDirectory() as tmp:
         calls, cfg = run_once(tmp, dry=False, shadow=True)
         assert [c[0] for c in calls if c[0] != "telegram"] == []  # no add/remove
-        assert "ТЕНЕВОЙ РЕЖИМ" in calls[0][1] and "DOS/USDT:USDT" in calls[0][1]
+        assert "[тень]" in calls[0][1] and "DOS/USDT:USDT [в вайтлисте] [тень]" in calls[0][1]
         state = json.loads(Path(cfg["state_file"]).read_text(encoding="utf-8"))
         assert list(state["temp"]) == ["DOS/USDT:USDT"]
         log = Path(cfg["log_file"]).read_text(encoding="utf-8")

@@ -32,9 +32,17 @@
   "tiers": {
     "perm": ["delist", "status", "author"],
     "temp": ["hour_spike", "day_spike", "swing_flat"],
-    "notify": ["bleed"]
+    "notify": ["bleed", "author_held"]
   },
   "shadow_mode": true,
+  "author_sync_live": true,
+  "author_max_new_per_run": 15,
+  "author_max_whitelist_cut": 12,
+  "author_min_keep_ratio": 0.5,
+  "author_error_renotify_hours": 6,
+  "lock_file": "blacklist_scout.lock",
+  "lock_stale_sec": 600,
+  "lock_wait_sec": 120,
   "temp_block_days": 7,
   "escalation_count": 3,
   "escalation_days": 30,
@@ -47,6 +55,7 @@
     "delist": "Binance: контракт закрывается {date} UTC",
     "status": "Binance: статус контракта {status}",
     "author": "в блэклисте автора: {reason}",
+    "author_held": "автор добавил разом {n} пар из вайтлиста/сделок (лимит {cap}) -- НЕ заблокировано, проверь список и реши сам",
     "hour_spike": "час {time} UTC: диапазон {range:.0f}%",
     "day_spike": "24 ч до {time} UTC: диапазон {range:.0f}%",
     "swing_flat": "24 ч до {time} UTC: диапазон {range:.0f}% при итоге {change:+.1f}%",
@@ -59,6 +68,12 @@
   "where_trade": " [открыта сделка #{trade_id}]",
   "msg": {
     "header": "Blacklist scout {ts} UTC",
+    "shadow_item": " [тень]",
+    "shadow_mark_part": " [пометка [тень]: в боте НЕ заблокировано, только наблюдение]",
+    "d_never": "не менялся",
+    "d_author": "Список автора: {n} записей, без перпа на Binance {noperp}, последнее изменение: {changed}",
+    "h_author_noop": "Автор добавил, но перпа на Binance нет (ничего не меняет): {pairs}",
+    "h_author_removed": "Автор УБРАЛ (у нас остаётся в блоке, ничего не снято, решай сам): {pairs}",
     "shadow_mark": " [ТЕНЕВОЙ РЕЖИМ: в боте ничего не заблокировано]",
     "h_new_temp": "Временный блок:",
     "h_new_perm": "Постоянный блок, закрепить навсегда в файле:",
@@ -79,5 +94,6 @@
     "d_perm_item": "  {pair} с {since} -- {text}",
     "d_file": "В blacklist-binance.json записей: {n}"
   },
+  "author_error_template": "Blacklist scout {ts} UTC: список автора не получен/не принят ({error}); работаю на последней удачной копии",
   "error_template": "Blacklist scout {ts} UTC: ОШИБКА, проверка не выполнена: {error}"
 }
