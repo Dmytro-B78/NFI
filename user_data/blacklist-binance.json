@@ -17,6 +17,7 @@
       "(NXPC)/.*",
       "(CYS)/.*",
       "(BTW)/.*",
+      "(INIT)/.*",
       "(APR|JCT|VELVET)/.*",
       "(ACX|PIVX|VIC)/.*",
       "(FIGHT|IDOL)/.*",
