@@ -18,6 +18,8 @@
       "(CYS)/.*",
       "(BTW)/.*",
       "(INIT)/.*",
+      "(BICO)/.*",
+      "(CVC)/.*",
       "(APR|JCT|VELVET)/.*",
       "(ACX|PIVX|VIC)/.*",
       "(FIGHT|IDOL)/.*",
