@@ -1,0 +1,23 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Compile strategy and scripts
+        run: python -m py_compile user_data/strategies/NostalgiaForInfinityX7.py scripts/*.py
+      - name: Script tests
+        working-directory: scripts
+        run: |
+          for t in test_*.py; do
+            echo "== $t"
+            python "$t"
+          done
