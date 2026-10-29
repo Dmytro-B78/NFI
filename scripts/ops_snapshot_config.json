@@ -1,0 +1,19 @@
+{
+  "private_config": "../user_data/config-private.json",
+  "env_file": "../.env",
+  "request_timeout_sec": 15,
+  "command_timeout_sec": 60,
+  "ops_repo_dir": "/root/nfi-ops",
+  "snapshot_file": "snapshot.md",
+  "git_user_name": "nfi-ops-bot",
+  "git_user_email": "nfi-ops-bot@users.noreply.github.com",
+  "commit_message": "snapshot {ts} UTC",
+  "service_name": "freqtrade-nfi",
+  "journal_since": "1 hour ago",
+  "journal_tail_lines": 20,
+  "scout_state_file": "blacklist_scout_state.json",
+  "log_tails": {
+    "scout full run": ["blacklist_scout.log", 15],
+    "scout sync": ["blacklist_scout_sync.log", 10]
+  }
+}
