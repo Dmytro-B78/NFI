@@ -23,7 +23,7 @@ def data(**kw):
                     "profit_closed_coin": 123.4, "profit_all_coin": 119.2},
          "status": [TRADE], "balance": {"total": 1500.5}, "count": {"current": 1, "max": 6},
          "blacklist": {"runtime": ["MITO/USDT:USDT"], "whitelist_n": 40},
-         "scout": {"temp": {"ICNT/USDT:USDT": {}}, "perm": {}, "author_info": {"entries": 38}},
+         "scout": {"temp": {"ICNT/USDT:USDT": {}}, "perm": {}, "author_info": {"entries": 38, "noperp": 12, "changed": 1793269206.0}},
          "journal": [], "tails": {"scout sync": ["line one"]}}
     d.update(kw)
     return d
@@ -40,7 +40,7 @@ def test_redact_cuts_every_credential():
 def test_build_has_sections_and_open_trade():
     text = rd.build(data())
     for part in ("# NFI snapshot 2026-10-29 12:00 UTC", "v17.5.178", "BTW/USDT:USDT", "wallet total: 1500.50",
-                 "Open trades (1, unrealized -4.20)", "ICNT/USDT:USDT", "line one"):
+                 "Open trades (1, unrealized -4.20)", "ICNT/USDT:USDT", "line one", "38 entries", "blacklist entries in the bot"):
         assert part in text, part
     assert "## Errors" not in text
 

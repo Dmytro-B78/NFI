@@ -1,4 +1,5 @@
 """Pure rendering for the ops snapshot: no I/O, no network."""
+from datetime import datetime, timezone
 
 SECRET_WORDS = ("pass", "secret", "token", "key", "chat", "user")
 MIN_SECRET_LEN = 6
@@ -80,16 +81,25 @@ def open_section(d):
     return out
 
 
+def author_line(info):
+    if not info:
+        return "n/a"
+    ch = info.get("changed")
+    when = datetime.fromtimestamp(ch, timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if ch else "never"
+    return "%s entries, %s without a Binance perp, list last changed %s" % (
+        info.get("entries", "n/a"), info.get("noperp", "n/a"), when)
+
+
 def scout_section(d):
     bl, sc = d.get("blacklist") or {}, d.get("scout")
     out = ["## Blacklist", "",
            "- whitelist size: %s" % bl.get("whitelist_n", "n/a"),
-           "- runtime blacklist (%d): %s" % (len(bl.get("runtime", [])), ", ".join(sorted(bl.get("runtime", [])))) ]
+           "- blacklist entries in the bot (file patterns plus runtime additions): %d" % len(bl.get("runtime", []))]
     if sc is None:
         return out + ["- scout state: n/a", ""]
     out += ["- scout temp (%d): %s" % (len(sc.get("temp", {})), ", ".join(sorted(sc.get("temp", {})))),
             "- scout perm (%d): %s" % (len(sc.get("perm", {})), ", ".join(sorted(sc.get("perm", {})))),
-            "- author sync: %s" % sc.get("author_info", "n/a"), ""]
+            "- author sync: %s" % author_line(sc.get("author_info")), ""]
     return out
 
 
