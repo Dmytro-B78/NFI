@@ -60,6 +60,12 @@ def test_collect_records_failed_sources():
     private = {"api_server": {"listen_ip_address": "127.0.0.1", "listen_port": 1, "username": "u", "password": "p"}}
     d = os_.collect(cfg, private, 1_700_000_000)
     assert "api login" in d["errors"] and "scout state" in d["errors"]
+    assert d["service"] and isinstance(d["journal"], list)
+
+
+def test_missing_tool_is_reported_not_raised():
+    code, out = os_.run_cmd(["no-such-tool-xyz"], 5)
+    assert code == 127 and "no-such-tool-xyz" in out
 
 
 def sh(*a, cwd=None):

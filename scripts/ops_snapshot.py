@@ -39,7 +39,10 @@ def tail(path, n):
 
 
 def run_cmd(args, timeout):
-    r = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired) as e:  # missing tool or hang: report, do not crash
+        return 127, "(%s failed: %r)" % (args[0], e)
     return r.returncode, (r.stdout + r.stderr).strip()
 
 
