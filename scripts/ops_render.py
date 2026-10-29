@@ -1,4 +1,6 @@
 """Pure rendering for the ops snapshot: no I/O, no network."""
+import csv
+import io
 from datetime import datetime, timezone
 
 SECRET_WORDS = ("pass", "secret", "token", "key", "chat", "user")
@@ -101,6 +103,16 @@ def scout_section(d):
             "- scout perm (%d): %s" % (len(sc.get("perm", {})), ", ".join(sorted(sc.get("perm", {})))),
             "- author sync: %s" % author_line(sc.get("author_info")), ""]
     return out
+
+
+def trades_csv(trades, fields):
+    """Closed trades as CSV text, sorted by trade_id so unchanged history gives an unchanged file."""
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(fields)
+    for t in sorted((t for t in trades if not t.get("is_open")), key=lambda t: t.get("trade_id", 0)):
+        w.writerow(["" if t.get(f) is None else t.get(f) for f in fields])
+    return buf.getvalue()
 
 
 def build(d):

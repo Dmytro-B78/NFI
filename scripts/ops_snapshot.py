@@ -54,6 +54,16 @@ def safe(errors, name, fn):
         return None
 
 
+def fetch_trades(bot, page):
+    out, offset = [], 0
+    while True:
+        res = bot.get("/trades?limit=%d&offset=%d" % (page, offset))
+        out += res["trades"]
+        offset += page
+        if len(res["trades"]) < page or offset >= res["total_trades"]:
+            return out
+
+
 def collect(cfg, private, now_s):
     errors = {}
     d = {"ts": datetime.fromtimestamp(now_s, timezone.utc).strftime("%Y-%m-%d %H:%M"), "errors": errors}
@@ -65,6 +75,7 @@ def collect(cfg, private, now_s):
         live = safe(errors, "/blacklist", lambda: {"runtime": bot.get("/blacklist")["blacklist"],
                                                    "whitelist_n": len(bot.get("/whitelist")["whitelist"])})
         d["blacklist"] = live
+    d["trades"] = safe(errors, "/trades", lambda: fetch_trades(bot, cfg["trades_page"])) if bot else None
     d["scout"] = safe(errors, "scout state", lambda: json.loads((HERE / cfg["scout_state_file"]).read_text(encoding="utf-8")))
     code, out = run_cmd(["systemctl", "is-active", cfg["service_name"]], cfg["command_timeout_sec"])
     d["service"] = out or "n/a"
@@ -82,12 +93,13 @@ def git(repo, *args, timeout=120):
     return r.returncode
 
 
-def publish(cfg, text, ts):
-    """Write the snapshot into the ops repo clone; commit and push only when it changed."""
+def publish(cfg, files, ts):
+    """Write files (name -> text) into the ops repo clone; commit and push only when something changed."""
     repo = Path(cfg["ops_repo_dir"])
     git(repo, "pull", "--rebase", "--quiet")
-    (repo / cfg["snapshot_file"]).write_text(text, encoding="utf-8")
-    git(repo, "add", cfg["snapshot_file"])
+    for name, text in files.items():
+        (repo / name).write_text(text, encoding="utf-8", newline="")
+    git(repo, "add", *files)
     if git(repo, "diff", "--cached", "--quiet") == 0:
         return "no change"
     git(repo, "-c", "user.name=" + cfg["git_user_name"], "-c", "user.email=" + cfg["git_user_email"],
@@ -109,7 +121,10 @@ def main():
     if args.dry_run:
         print(text)
         return
-    print(publish(cfg, text, d["ts"]))
+    files = {cfg["snapshot_file"]: text}
+    if d.get("trades") is not None:  # a failed fetch keeps the previous trades file untouched
+        files[cfg["trades_file"]] = rd.trades_csv(d["trades"], cfg["trade_fields"])
+    print(publish(cfg, files, d["ts"]))
 
 
 if __name__ == "__main__":

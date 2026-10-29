@@ -59,13 +59,30 @@ def test_collect_records_failed_sources():
     cfg["service_name"] = "no-such-service-xyz"
     private = {"api_server": {"listen_ip_address": "127.0.0.1", "listen_port": 1, "username": "u", "password": "p"}}
     d = os_.collect(cfg, private, 1_700_000_000)
-    assert "api login" in d["errors"] and "scout state" in d["errors"]
+    assert "api login" in d["errors"] and "scout state" in d["errors"] and d["trades"] is None
     assert d["service"] and isinstance(d["journal"], list)
 
 
 def test_missing_tool_is_reported_not_raised():
     code, out = os_.run_cmd(["no-such-tool-xyz"], 5)
     assert code == 127 and "no-such-tool-xyz" in out
+
+
+def test_trades_csv_closed_only_sorted_with_blanks():
+    fields = ["trade_id", "pair", "profit_abs", "exit_reason"]
+    trades = [{"trade_id": 9, "pair": "B/USDT:USDT", "profit_abs": 1.5, "exit_reason": "roi"},
+              {"trade_id": 5, "pair": "A/USDT:USDT", "profit_abs": -2.0, "exit_reason": None},
+              {"trade_id": 7, "pair": "OPEN/USDT:USDT", "is_open": True}]
+    out = rd.trades_csv(trades, fields)
+    assert out == "trade_id,pair,profit_abs,exit_reason\n5,A/USDT:USDT,-2.0,\n9,B/USDT:USDT,1.5,roi\n"
+
+
+def test_fetch_trades_pages_until_total():
+    class FakeBot:
+        def get(self, path):
+            off = int(path.split("offset=")[1])
+            return {"trades": [{"trade_id": i} for i in range(off, min(off + 2, 5))], "total_trades": 5}
+    assert [t["trade_id"] for t in os_.fetch_trades(FakeBot(), 2)] == [0, 1, 2, 3, 4]
 
 
 def sh(*a, cwd=None):
@@ -84,9 +101,9 @@ def test_publish_commits_only_on_change():
         sh("git", "clone", str(tmp / "remote.git"), str(tmp / "work"))
         cfg = json.loads((HERE / "ops_snapshot_config.json").read_text(encoding="utf-8"))
         cfg["ops_repo_dir"] = str(tmp / "work")
-        assert os_.publish(cfg, "state A\n", "t1") == "pushed"
-        assert os_.publish(cfg, "state A\n", "t2") == "no change"
-        assert os_.publish(cfg, "state B\n", "t3") == "pushed"
+        assert os_.publish(cfg, {"snapshot.md": "state A\n", "trades.csv": "x\n"}, "t1") == "pushed"
+        assert os_.publish(cfg, {"snapshot.md": "state A\n", "trades.csv": "x\n"}, "t2") == "no change"
+        assert os_.publish(cfg, {"snapshot.md": "state B\n", "trades.csv": "x\n"}, "t3") == "pushed"
         log = subprocess.run(["git", "-C", str(tmp / "remote.git"), "log", "--format=%s", "main"],
                              capture_output=True, text=True, check=True).stdout.splitlines()
         assert log == ["snapshot t3 UTC", "snapshot t1 UTC", "seed"], log
