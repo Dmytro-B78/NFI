@@ -20,6 +20,8 @@
       "(INIT)/.*",
       "(BICO)/.*",
       "(CVC)/.*",
+      "(MITO)/.*",
+      "(INTW)/.*",
       "(APR|JCT|VELVET)/.*",
       "(ACX|PIVX|VIC)/.*",
       "(FIGHT|IDOL)/.*",
