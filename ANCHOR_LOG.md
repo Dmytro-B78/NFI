@@ -16,6 +16,83 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-11-02
+**Код (наш):** v17.5.178, commit `55f8a79` (upstream `74c4f37` + наши 2 патча: protections StoplossGuard + MaxDrawdown, 661_enable); sha256 боевого файла `3b0c4e7b...`
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары, эффективно меньше -- часть пар в блэклисте)
+**Блэклист:** commit `9e24504` (02.11.2026, 58 записей)
+**max_open_trades:** 6 (`--max-open-trades 6`)
+**Protections:** `--enable-protections`
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724)
+**Два варианта ставки (кандидат обязан гнаться в обоих):**
+- **(A) unlimited**: `--config user_data/config.json --config user_data/pairlist-static-backtest-derisk4-v1757.json --config user_data/backtest-wallet1000.json`. Лог `backtest_v17578_slots6_anchor_full.log`, zip `backtest-result-2026-11-02_15-15-06`. Total profit / Calmar раздуты компаундингом -- для A/B не решающие.
+- **(B) fixed150**: то же + `--config user_data/backtest-fixed-stake.json`. Лог `backtest_v17578_slots6_fixed150_full.log`, zip `backtest-result-2026-11-02_15-33-01`. **Решающий для прибыли.**
+
+**Причина новой записи:** смена code-baseline (v17.5.178 задеплоена 23.10 без A/B)
+и смена блэклиста (51 -> 58). Снята для A/B X8 c77cc7b (02.11.2026, отклонён --
+см. ниже). Результат практически совпал с #11 (325/327 сделок против 326/328),
+блэклист-изменения на окно почти не влияют. Zero-loss: Sortino/Calmar/PF по
+закрытым сделкам -- sentinel, не использовать; сравнивать по wallet
+Sharpe/Sortino/Calmar, SQN, underwater (balance).
+
+| Метрика | (A) unlimited | (B) fixed150 |
+|---|---|---|
+| Trades | 325 | 327 |
+| Absolute profit | 23593.128 USDT (2359.31%) | 3115.284 USDT (311.53%) |
+| CAGR | 688.68% | 149.01% |
+| Sharpe (closed trades) | 8.18 | 9.74 |
+| Sortino / Calmar (closed) | sentinel | sentinel |
+| SQN | 13.43 | 15.94 |
+| Profit factor | sentinel (0 убытков) | sentinel (0 убытков) |
+| Expectancy (Ratio) | 72.59 (100.00) | 9.53 (100.00) |
+| Max % underwater (closed) | 0.00% | 0.00% |
+| Max % underwater (wallet balance) | 12.59% | 4.11% |
+| Absolute drawdown (wallet) | 2039.061 USDT (12.59%) | 111.331 USDT (3.02%) |
+| Sharpe (daily wallet) | 4.13 | 3.94 |
+| Sortino (daily wallet) | 5.72 | 8.16 |
+| Calmar (daily wallet) | 635.25 | 349.31 |
+| Long / Short trades | 279 / 46 | 281 / 46 |
+| Long / Short profit USDT | 21868.782 / 1724.346 | 2927.865 / 187.419 |
+| Шорт-теги (fixed150) | -- | 661: 34 сд. +159.1; 562: 12 сд. +28.3 |
+| Best trade | ONDO +85.11% | ONDO +85.11% |
+| Worst trade | NEAR +0.16% (0 убыточных) | ONDO +0.05% (0 убыточных) |
+| Best day / Worst day | 1756.076 / 0 USDT | 450.888 / 0 USDT |
+| Days win/draw/lose | 140 / 413 / 0 | 143 / 410 / 0 |
+
+### A/B 02.11.2026: X8 c77cc7b -- ОТКЛОНЁН
+
+**Кандидат:** upstream X8 `c77cc7b` (v18.0.193, HEAD main на 02.11.2026) + только наш
+protections-блок (+16 строк, побайтно как в X7); 661 выключен, как у автора.
+Папка `user_data/strategies_x8_c77cc7b_test/`, sha256 `702cdbfc...`. Условия
+идентичны ACTIVE выше. Логи `backtest_x8c77_slots6_cand_full.log` (zip
+`2026-11-02_15-46-56`), `backtest_x8c77_slots6_fixed150_full.log` (zip `2026-11-02_16-02-55`).
+
+| Метрика | X7 unl | X8 unl | X7 fix150 | X8 fix150 |
+|---|---|---|---|---|
+| Trades | 325 | 356 | 327 | 358 |
+| Absolute profit | 23593 | **37176** | 3115 | **3522** |
+| Sharpe (daily wallet) | **4.13** | 3.29 | **3.94** | 3.40 |
+| Sortino (daily wallet) | **5.72** | 4.32 | **8.16** | 7.88 |
+| Calmar (daily wallet) | **635** | 550 | **349** | 183 |
+| SQN | **13.43** | 5.08 | **15.94** | 9.78 |
+| Underwater (wallet) | **12.59%** | 22.83% | **4.11%** | 6.48% |
+| DD duration (wallet) | **7.0 дн** | 26.0 дн | **8.7 дн** | 26.0 дн |
+| Short profit USDT | **+1724** | -3857 | **+187** | -21 |
+| Worst day | **0** | -6039 | **0** | -232 |
+
+**Вывод:** X8 выигрывает только абсолютную прибыль/CAGR, проигрывает все
+риск-метрики в обоих вариантах ставки -> отклонён по протоколу, X7 остаётся.
+Весь минус шортов X8 и его худший день/длинная просадка -- одна сделка:
+VVV short тег 542, вход 19.12.2025, `stop_loss` (-20.03% / -6039 на unlimited,
+-58.01% / -232 на fixed150). Тег 562 в X8 прибыльный (+2089 / +183).
+Варианты "X8 long-only" и "X8 без 542" НЕ гонялись: подбор после просмотра
+результата = подгонка. "X8 long-only" отложен до готовности NT2 (шорты -> NT2),
+тогда -- на свежем коде и, желательно, новом окне.
+
+---
+
+## SUPERSEDED
+
+**Заменён 02.11.2026 -- code-baseline v17.5.178 (`55f8a79`) и блэклист `9e24504` (58), см. ACTIVE выше.**
 **Дата фиксации:** 2026-10-20
 **Код (наш):** v17.5.172, commit `c169eb8` (задеплоено 20.10.2026 00:09 CEST)
 **Код (апстрим):** iterativv X7-файл на мёрже `f4b162f` (19.10.2026, корень репо) + наши 2 патча (protections StoplossGuard + MaxDrawdown, 661_enable), diff 18 строк; sha256 боевого файла `45fec93c...`
