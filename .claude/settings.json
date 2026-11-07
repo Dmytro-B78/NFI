@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./user_data/config-private.json)",
+      "Read(./load-env.ps1)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(./user_data/config-private.json)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(sftp:*)",
+      "Bash(systemctl:*)",
+      "Bash(git push --force:*)"
+    ]
+  }
+}
