@@ -20,6 +20,7 @@
       "(INIT)/.*",
       "(BICO)/.*",
       "(CVC)/.*",
+      "(KAVA)/.*",
       "(MITO)/.*",
       "(INTW)/.*",
       "(APR|JCT|VELVET)/.*",
