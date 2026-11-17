@@ -16,6 +16,90 @@ anchor на текущий пейрлист-снимок; при смене сн
 
 ## ACTIVE
 
+**Дата фиксации:** 2026-11-17
+**Код (наш):** v17.5.266, commit `1b51786` (upstream `b65d70f` + наши 3 патча: protections StoplossGuard + MaxDrawdown, 661_enable, фикс сигнала 42 `roc_9_1d_gt_neg_30`); sha256 боевого файла `a9ac731f...`
+**Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары, эффективно меньше -- часть пар в блэклисте)
+**Блэклист:** commit `6c5c535` (17.11.2026, 60 записей)
+**max_open_trades:** 6 (`--max-open-trades 6`)
+**Protections:** `--enable-protections`
+**Timerange:** 2025-01-03 18:40:00 -- 2026-07-24 00:00:00 (запрошено 20250103-20260724, 566 дней)
+**Два варианта ставки (кандидат обязан гнаться в обоих):**
+- **(A) unlimited**: `--config user_data/config.json --config user_data/pairlist-static-backtest-derisk4-v1757.json --config user_data/backtest-wallet1000.json`. Лог `backtest_v175266_slots6_anchor_full.log`. Total profit / Calmar раздуты компаундингом -- для A/B не решающие.
+- **(B) fixed150**: то же + `--config user_data/backtest-fixed-stake.json`. Лог `backtest_v175266_slots6_fixed150_full.log`. **Решающий для прибыли.**
+
+Полная команда (PowerShell, локально): `freqtrade backtesting <конфиги выше> --strategy NostalgiaForInfinityX7 --max-open-trades 6 --enable-protections --timerange 20250103-20260724 --timeframe 5m --export trades --breakdown day week month --cache none *> <лог>`.
+
+**Причина новой записи:** смена code-baseline (v17.5.216 задеплоена 07.11,
+v17.5.266 -- 17.11, обе без A/B: окна только из "add protection") и блэклиста
+(58 -> 60). Снята для A/B X8 `3243cbe` (17.11.2026, отклонён -- см. ниже).
+Результат почти совпал с #12 (322/323 сделки против 325/327). Zero-loss
+сохраняется: Sortino/Calmar/PF по закрытым сделкам -- sentinel, сравнивать по
+wallet Sharpe/Sortino/Calmar, SQN, underwater (balance).
+
+| Метрика | (A) unlimited | (B) fixed150 |
+|---|---|---|
+| Trades | 322 | 323 |
+| Absolute profit | 23327.622 USDT (2332.76%) | 3084.659 USDT (308.47%) |
+| CAGR | 683.18% | 147.81% |
+| Sharpe (closed trades) | 8.12 | 9.61 |
+| Sortino / Calmar (closed) | sentinel | sentinel |
+| SQN | 13.39 | 15.82 |
+| Max % underwater (closed) | 0.00% | 0.00% |
+| Max % underwater (wallet balance) | 12.64% | 4.15% |
+| Absolute drawdown (wallet) | 2027.94 USDT (12.64%) | 111.331 USDT (3.04%) |
+| DD duration (wallet) | 7 дн 00:50 | 8 дн 17:40 |
+| Sharpe (daily wallet) | 4.12 | 3.99 |
+| Sortino (daily wallet) | 5.75 | 7.93 |
+| Calmar (daily wallet) | 625.70 | 343.14 |
+| Long / Short trades | 276 / 46 | 277 / 46 |
+| Long / Short profit USDT | 21615.849 / 1711.774 | 2897.240 / 187.419 |
+| Best trade | ONDO +85.11% | ONDO +85.11% |
+| Worst trade | NEAR +0.05% (0 убыточных) | ONDO +0.05% (0 убыточных) |
+| Best day / Worst day | 1753.682 / 0 USDT | 450.888 / 0 USDT |
+| Days win/draw/lose | 138 / 415 / 0 | 141 / 412 / 0 |
+
+### A/B 17.11.2026: X8 3243cbe -- ОТКЛОНЁН
+
+**Кандидат:** upstream X8 `3243cbe` (v18.0.266, HEAD main на 17.11.2026) + только наш
+protections-блок (+16 строк, побайтно как в кандидате c77cc7b, вставлен после
+`stoploss = -0.99`, count==1); 661 выключен, как у автора. Папка
+`user_data/strategies_x8_3243cbe_test/`, sha256 `68c5bef8...`. Локально, НЕ в git.
+py_compile OK, import-тест перед прогонами. Условия идентичны ACTIVE выше. Логи
+`backtest_x83243_slots6_cand_full.log`, `backtest_x83243_slots6_fixed150_full.log`.
+
+X8 c77cc7b -> 3243cbe: 141 коммит по X8-файлу, 46 не "add protection". Главное:
+выход из застрявших сделок 14 -> 100 дней (`e754f69`, фактически выключен),
+ставка первого входа system_v4 x0.75 (`0936212`), лесенка grind_1 -6..-10% ->
+-18..-22% (`63b8724`), лимит grind до de-risk 1.0 от первого входа
+(`4b33f9e`/`113c64e`), частичные выходы не блокируют de-risk/grind
+(`65c4973`), ~25 коммитов "use current value for ... minimums", переписан
+signal 101, новый signal 106 (выключен), grind-only-after-derisk (выключен).
+
+| Метрика | X7 unl | X8 unl | X7 fix150 | X8 fix150 |
+|---|---|---|---|---|
+| Trades | 322 | 339 | 323 | 342 |
+| Absolute profit | **23328** | 14466 | **3085** | 2892 |
+| Sharpe (daily wallet) | **4.12** | 3.15 | **3.99** | 3.53 |
+| Sortino (daily wallet) | **5.75** | 2.46 | 7.93 | **14.86** |
+| Calmar (daily wallet) | **626** | 198 | **343** | 262 |
+| SQN | **13.39** | 3.62 | **15.82** | 12.65 |
+| Underwater (wallet) | **12.64%** | 24.77% | 4.15% | **3.73%** |
+| DD duration (wallet) | **7.0 дн** | 9.3 дн | **8.7 дн** | 18.4 дн |
+| Short profit USDT | **+1712** | -2751 | **+187** | +69 |
+| Worst trade | **+0.05%** | VVV -29.02% | **+0.05%** | VVV -50.36% |
+| Worst day | **0** | -3692 | **0** | -103 |
+
+**Вывод:** на unlimited X8 хуже по всем метрикам, включая прибыль (-38%); на
+fixed150 выигрывает только Sortino(w) и underwater, прибыль -6%. Отклонён по
+протоколу, X7 остаётся. Худшая сделка и весь минус шортов X8 -- снова VVV short
+(как 02.11). Отключение stale-выхода проблему не убрало. Третий отказ X8 подряд
+(20.10, 02.11, 17.11).
+
+---
+
+## SUPERSEDED
+
+**Заменён 17.11.2026 -- code-baseline v17.5.266 (`1b51786`) и блэклист `6c5c535` (60), см. ACTIVE выше.**
 **Дата фиксации:** 2026-11-02
 **Код (наш):** v17.5.178, commit `55f8a79` (upstream `74c4f37` + наши 2 патча: protections StoplossGuard + MaxDrawdown, 661_enable); sha256 боевого файла `3b0c4e7b...`
 **Пейрлист-снимок:** `pairlist-static-backtest-derisk4-v1757.json` (73 пары, эффективно меньше -- часть пар в блэклисте)
