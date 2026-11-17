@@ -22,7 +22,7 @@
   "author_reason_max_len": 160,
   "thresholds": {
     "hour_range_pct": 80.0,
-    "day_range_pct": 100.0,
+    "day_range_pct": 1000.0,
     "swing_range_pct": 50.0,
     "swing_net_to_range": 0.33,
     "bleed_high_days": 90,
@@ -34,7 +34,7 @@
     "temp": ["hour_spike", "day_spike", "swing_flat"],
     "notify": ["bleed", "author_held"]
   },
-  "shadow_mode": true,
+  "shadow_mode": false,
   "author_sync_live": true,
   "author_max_new_per_run": 15,
   "author_max_whitelist_cut": 12,
